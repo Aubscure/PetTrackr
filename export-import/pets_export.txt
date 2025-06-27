@@ -1,0 +1,36 @@
+ID: 1
+Name: asdf
+Breed: asdf
+Birthdate: 2002-02-02
+Image Path: images\asdf_1.jpg
+--------------------
+ID: 2
+Name: brownie
+Breed: labrador
+Birthdate: 2023-06-14
+Image Path: images\brownie_2.jpg
+--------------------
+ID: 3
+Name: Justin
+Breed: Soft Wheaten Terrier
+Birthdate: 2022-06-09
+Image Path: images\justin_3.jpg
+--------------------
+ID: 4
+Name: Kyle
+Breed: Soft Wheaten Terrier
+Birthdate: 2020-06-03
+Image Path: images\kyle_4.jpg
+--------------------
+ID: 5
+Name: Joe
+Breed: Soft Wheaten Terrier
+Birthdate: 2022-08-10
+Image Path: images\joe_5.jpg
+--------------------
+ID: 6
+Name: Janice
+Breed: Golden Retriever
+Birthdate: 2017-03-14
+Image Path: images\janice_6.jpg
+--------------------
