@@ -49,13 +49,20 @@ class PetCard(ctk.CTkFrame):
         info_frame = create_frame(container, "white")
         info_frame.pack(fill="x")
 
-        # Name with larger font
+        # Name with larger font and paw emoji
+        name_frame = create_frame(info_frame, "white")
+        name_frame.pack(pady=(0, 8))
+        ctk.CTkLabel(
+            name_frame,
+            text="🐾",
+            font=get_card_icon_font(),
+        ).pack(side="left", padx=(0, 5))
         label_name = create_label(
-            info_frame, 
+            name_frame, 
             self.pet.name, 
             font=get_card_title_font()
         )
-        label_name.pack(pady=(0, 8))
+        label_name.pack(side="left")
 
         # Details with icon-text pairs
         details_frame = create_frame(info_frame, "white")
@@ -74,7 +81,7 @@ class PetCard(ctk.CTkFrame):
         create_label(
             breed_row, 
             self.pet.breed or "Unknown", 
-            font=get_card_detail_font(),
+            font=get_card_detail_font(),  # Using default font size
             anchor="w"
         ).pack(side="left", padx=5)
 
@@ -91,7 +98,7 @@ class PetCard(ctk.CTkFrame):
         create_label(
             birth_row, 
             self.pet.birthdate, 
-            font=get_card_detail_font(),
+            font=get_card_detail_font(),  # Using default font size
             anchor="w"
         ).pack(side="left", padx=5)
 
@@ -108,7 +115,7 @@ class PetCard(ctk.CTkFrame):
         create_label(
             age_row, 
             self.pet.age(), 
-            font=get_card_detail_font(),
+            font=get_card_detail_font(),  # Using default font size
             anchor="w"
         ).pack(side="left", padx=5)
 

@@ -2,9 +2,9 @@
 import sqlite3
 import os
 
-class PetDatabaseInitializer:
+class OwnerDatabaseInitializer:
     """
-    Handles initialization of the pets.db database and creation of the pets table.
+    Handles initialization of the pets.db database and creation of the owners table.
     """
 
     def __init__(self):
@@ -13,20 +13,17 @@ class PetDatabaseInitializer:
         self.db_path = os.path.join(self.data_dir, 'pets.db')
 
     def initialize(self):
-        """Creates the pets table if it does not already exist."""
+        """Creates the owners table if it does not already exist."""
         os.makedirs(self.data_dir, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS pets (
+                CREATE TABLE IF NOT EXISTS owners (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
-                    breed TEXT,
-                    birthdate TEXT,
-                    image_path TEXT,
-                    owner_id INTEGER NOT NULL,
-                    FOREIGN KEY (owner_id) REFERENCES owners(id) ON DELETE CASCADE
+                    contact_number TEXT,
+                    address TEXT
                 );
             ''')
 
@@ -34,4 +31,4 @@ class PetDatabaseInitializer:
 
 # Optional standalone run
 if __name__ == "__main__":
-    PetDatabaseInitializer().initialize()
+    OwnerDatabaseInitializer().initialize()
