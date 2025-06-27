@@ -1,4 +1,4 @@
-#frontend/components/pet_card.py
+# frontend/components/pet_card.py
 import os
 from PIL import Image
 import customtkinter as ctk
@@ -12,7 +12,7 @@ from frontend.style.style import (
 )
 
 class PetCard(ctk.CTkFrame):
-    def __init__(self, master, pet, image_store, *args, **kwargs):
+    def __init__(self, master, pet, image_store, owner=None, *args, **kwargs):
         super().__init__(
             master, 
             fg_color="white", 
@@ -22,6 +22,7 @@ class PetCard(ctk.CTkFrame):
             *args, **kwargs
         )
         self.pet = pet
+        self.owner = owner  # Store owner separately
         self.image_store = image_store
         self.configure(width=240)  # Slightly wider for better content
         self.columnconfigure(0, weight=1)
@@ -81,7 +82,7 @@ class PetCard(ctk.CTkFrame):
         create_label(
             breed_row, 
             self.pet.breed or "Unknown", 
-            font=get_card_detail_font(),  # Using default font size
+            font=get_card_detail_font(),
             anchor="w"
         ).pack(side="left", padx=5)
 
@@ -98,7 +99,7 @@ class PetCard(ctk.CTkFrame):
         create_label(
             birth_row, 
             self.pet.birthdate, 
-            font=get_card_detail_font(),  # Using default font size
+            font=get_card_detail_font(),
             anchor="w"
         ).pack(side="left", padx=5)
 
@@ -115,10 +116,34 @@ class PetCard(ctk.CTkFrame):
         create_label(
             age_row, 
             self.pet.age(), 
-            font=get_card_detail_font(),  # Using default font size
+            font=get_card_detail_font(),
             anchor="w"
         ).pack(side="left", padx=5)
 
+        # Owner row (only if owner exists)
+# In the owner section (replace the existing owner_row code)
+        if self.owner:
+            
+            owner_row = create_frame(details_frame, "white")
+            owner_row.pack(fill="x", pady=3)
+            ctk.CTkLabel(
+                owner_row, 
+                text="👤", 
+                font=get_card_icon_font(),
+                width=24,
+                anchor="w"
+            ).pack(side="left")
+            create_label(
+                owner_row, 
+                f"{self.owner.name} ({self.owner.contact_number})", 
+                font=get_card_detail_font(),
+                anchor="w"
+            ).pack(side="left", padx=5)
+    
+    
+
+    
+    
     def _get_pet_thumbnail(self):
         try:
             img_path = os.path.join("backend", "data", self.pet.image_path)

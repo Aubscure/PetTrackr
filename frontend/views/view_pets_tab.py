@@ -1,8 +1,11 @@
 #frontend/views/view_pets_tab.py
 import customtkinter as ctk
+from backend.models import owner
 from frontend.components.pet_card import PetCard
-from backend.controllers.pet_controller import get_all_pets
+from backend.controllers.pet_controller import PetController
 from frontend.style.style import create_label, create_button, create_frame, get_title_font
+
+
 
 def create_view_pets_tab(parent, show_frame):
     parent_children = parent.winfo_children()
@@ -53,11 +56,18 @@ def create_view_pets_tab(parent, show_frame):
 
     # Add pet cards in a 4-column grid
     thumbnails = []
-    pets = get_all_pets()
-    for i, pet in enumerate(pets):
+    controller = PetController()
+    pets, owners = controller.get_pets_with_owners()  # Get both pets and owners
+    
+    for i, (pet, owner) in enumerate(zip(pets, owners)):  # Use zip to iterate both lists
         row = i // 4
         col = i % 4
-        card = PetCard(scrollable_frame, pet, thumbnails)
+        card = PetCard(
+            scrollable_frame, 
+            pet, 
+            thumbnails,
+            owner=owner  # Pass the owner object here
+        )
         card.grid(
             row=row, 
             column=col, 
@@ -66,6 +76,9 @@ def create_view_pets_tab(parent, show_frame):
             sticky="nsew"
         )
         scrollable_frame.rowconfigure(row, weight=1)
+
+        print(owner.name)  # Before creating PetCard
+    print(owner.contact_number)  # Before creating PetCard
 
     # Back button
     btn_wrapper = create_frame(parent)
