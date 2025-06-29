@@ -23,8 +23,13 @@ def launch_gui():
     main_frame = ctk.CTkFrame(root, fg_color="transparent")
     main_frame.pack(expand=True, fill="both")
 
-    def show_frame(name: str, **kwargs):
+    navigation_stack = []
+
+    def show_frame(name: str, from_back=False, **kwargs):
         """Show different frames based on the name."""
+        # Only push to stack if not coming from a back action
+        if not from_back:
+            navigation_stack.append((name, kwargs.copy()))
 
         # Clear the current frame
         for widget in main_frame.winfo_children():
@@ -39,6 +44,14 @@ def launch_gui():
         elif name == "pet_profile":
             pet = kwargs.get("pet")
             grooming_logs = GroomingLogsController().get_grooming_logs_for_pet(pet.id) if pet else []
+            # Define a go_back function that pops the stack and shows the previous frame
+            def go_back():
+                if len(navigation_stack) > 1:
+                    navigation_stack.pop()  # Remove current
+                    prev_name, prev_kwargs = navigation_stack[-1]
+                    show_frame(prev_name, from_back=True, **prev_kwargs)
+                else:
+                    show_frame("dashboard", from_back=True)
             create_pet_profile_tab(
                 main_frame,
                 pet=pet,
@@ -46,8 +59,9 @@ def launch_gui():
                 vet_visits=kwargs.get("vet_visits", []),
                 vaccinations=kwargs.get("vaccinations", []),
                 feeding_logs=kwargs.get("feeding_logs", []),
-                grooming_logs=grooming_logs,  # <-- Pass the logs here
-                show_frame=show_frame
+                grooming_logs=grooming_logs,
+                show_frame=show_frame,
+                go_back=go_back
             )
         elif name == "vaccination_visits":
             VaccinationVisitsTab.create(

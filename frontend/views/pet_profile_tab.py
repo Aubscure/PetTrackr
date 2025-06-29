@@ -8,7 +8,7 @@ from frontend.style.style import (
 from backend.services.daycare_prices import compute_total_fee
 
 class PetProfileTab:
-    def __init__(self, parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame):
+    def __init__(self, parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame, go_back):
         self.parent = parent
         self.pet = pet
         self.owner = owner
@@ -17,6 +17,7 @@ class PetProfileTab:
         self.feeding_logs = feeding_logs
         self.grooming_logs = grooming_logs  # NEW
         self.show_frame = show_frame
+        self.go_back = go_back
         self._build()
 
     def _build(self):
@@ -215,15 +216,15 @@ class PetProfileTab:
         btn = create_button(
             self.parent,
             text="← Back",
-            command=lambda: self.show_frame("view_pets"),  # <-- Go back to view_pets
+            command=self.go_back if self.go_back else lambda: self.show_frame("view_pets"),
             color="#8c8c8c",
             width=120
         )
         btn.pack(side="bottom", pady=16)
 
-def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame):
+def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame, go_back=None):
     """
     Factory function to create and display a PetProfileTab.
     """
-    PetProfileTab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame)
+    PetProfileTab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame, go_back)
     return parent

@@ -15,13 +15,14 @@ class PetCardWithRecords(PetCard):
     def __init__(self, master, pet, image_store, owner=None, on_click=None, *args, **kwargs):
         self.vaccinations = VaccinationController().get_by_pet_id(pet.id)
         self.vet_visits = VetVisitController().get_by_pet_id(pet.id)
-        print(f"Pet: {pet.name} | Vaccinations: {self.vaccinations} | Vet Visits: {self.vet_visits}")  # Debug print
+        self.on_click = on_click  # Save the callback
         super().__init__(master, pet, image_store, owner, on_click, *args, **kwargs)
 
     def _build_card(self):
         # Main container
         container = create_frame(self, "white")
         container.pack(padx=12, pady=12, fill="both", expand=True)
+        self._bind_click(container)  # Make the card clickable
 
         # Horizontal layout: left (details), right (image)
         main_row = create_frame(container, "white")
@@ -152,3 +153,11 @@ class PetCardWithRecords(PetCard):
                 create_label(records_frame, f"• {v}", font=get_card_detail_font(), anchor="w").pack(anchor="w", padx=10)
         else:
             create_label(records_frame, "No vet visits.", font=get_card_detail_font(), anchor="w").pack(anchor="w", padx=10)
+
+    def _bind_click(self, widget):
+        def handler(event):
+            if self.on_click:
+                self.on_click(self.pet)
+        widget.bind("<Button-1>", handler)
+        for child in widget.winfo_children():
+            self._bind_click(child)

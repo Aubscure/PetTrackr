@@ -63,7 +63,26 @@ class VaccinationVisitsTab:
         else:
             for idx, pet in enumerate(pets_with_records):
                 owner = owner_lookup(pet.owner_id) if callable(owner_lookup) else owner_lookup.get(pet.owner_id)
-                card = PetCardWithRecords(cards_frame, pet, image_store, owner=owner)
+                vet_visits = vet_ctrl.get_by_pet_id(pet.id)
+                vaccinations = vacc_ctrl.get_by_pet_id(pet.id)
+                # If you have a FeedingLogController and GroomingLogController, use them:
+                from backend.controllers.feeding_log_controller import FeedingLogController
+                from backend.controllers.grooming_controller import GroomingLogsController
+                feeding_logs = FeedingLogController().get_by_pet_id(pet.id)
+                grooming_logs = GroomingLogsController().get_grooming_logs_for_pet(pet.id)
+                card = PetCardWithRecords(
+                    cards_frame, pet, image_store, owner=owner,
+                    on_click=lambda pet=pet, owner=owner, vet_visits=vet_visits, vaccinations=vaccinations, feeding_logs=feeding_logs, grooming_logs=grooming_logs:
+                        show_frame(
+                            "pet_profile",
+                            pet=pet,
+                            owner=owner,
+                            vet_visits=vet_visits,
+                            vaccinations=vaccinations,
+                            feeding_logs=feeding_logs,
+                            grooming_logs=grooming_logs
+                        )
+                )
                 row, col = divmod(idx, 3)
                 card.grid(row=row, column=col, padx=12, pady=12, sticky="nsew")
 

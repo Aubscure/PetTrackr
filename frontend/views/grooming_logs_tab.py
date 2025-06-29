@@ -60,7 +60,15 @@ def create_grooming_logs_tab(master, show_frame):
 
     # Only show pets with grooming logs
     from backend.controllers.grooming_controller import GroomingLogsController
+    from backend.controllers.feeding_log_controller import FeedingLogController
+    from backend.controllers.vaccination_controller import VaccinationController
+    from backend.controllers.vet_visit_controller import VetVisitController
+
     grooming_ctrl = GroomingLogsController()
+    feeding_ctrl = FeedingLogController()
+    vacc_ctrl = VaccinationController()
+    vet_ctrl = VetVisitController()
+
     pets_with_logs = []
     owners_with_logs = []
     for pet, owner in zip(pets, owners):
@@ -74,7 +82,26 @@ def create_grooming_logs_tab(master, show_frame):
         no_pets_label.grid(row=0, column=0, pady=40)
     else:
         for idx, (pet, owner) in enumerate(zip(pets_with_logs, owners_with_logs)):
-            card = PetCardWithGroomingLogs(cards_frame, pet, image_store, owner=owner)
+            vet_visits = vet_ctrl.get_by_pet_id(pet.id)
+            vaccinations = vacc_ctrl.get_by_pet_id(pet.id)
+            feeding_logs = feeding_ctrl.get_by_pet_id(pet.id)
+            grooming_logs = grooming_ctrl.get_grooming_logs_for_pet(pet.id)
+            def on_card_click(
+                pet=pet, owner=owner, vet_visits=vet_visits, vaccinations=vaccinations,
+                feeding_logs=feeding_logs, grooming_logs=grooming_logs
+            ):
+                show_frame(
+                    "pet_profile",
+                    pet=pet,
+                    owner=owner,
+                    vet_visits=vet_visits,
+                    vaccinations=vaccinations,
+                    feeding_logs=feeding_logs,
+                    grooming_logs=grooming_logs
+                )
+            card = PetCardWithGroomingLogs(
+                cards_frame, pet, image_store, owner=owner, on_click=on_card_click
+            )
             row, col = divmod(idx, 3)
             card.grid(row=row, column=col, padx=12, pady=12, sticky="nsew")
 
