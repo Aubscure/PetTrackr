@@ -16,10 +16,10 @@ class VetVisitDB:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO vet_visits (pet_id, visit_date, reason, notes)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO vet_visits (pet_id, visit_date, reason, notes, cost)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (visit.pet_id, visit.visit_date, visit.reason, visit.notes)
+                (visit.pet_id, visit.visit_date, visit.reason, visit.notes, visit.cost)
             )
             conn.commit()
             return cursor.lastrowid
@@ -30,10 +30,10 @@ class VetVisitDB:
             cursor.execute(
                 """
                 UPDATE vet_visits
-                SET pet_id = ?, visit_date = ?, reason = ?, notes = ?
+                SET pet_id = ?, visit_date = ?, reason = ?, notes = ?, cost = ?
                 WHERE id = ?
                 """,
-                (visit.pet_id, visit.visit_date, visit.reason, visit.notes)
+                (visit.pet_id, visit.visit_date, visit.reason, visit.notes, visit.cost)
             )
             conn.commit()
 
@@ -43,9 +43,9 @@ class VetVisitDB:
             cursor = conn.cursor()
             # Removed the pet existence check since it's causing errors
             cursor.execute("""
-                SELECT pet_id, visit_date, reason, notes 
-                FROM vet_visits 
-                WHERE pet_id = ? 
+                SELECT pet_id, visit_date, reason, notes, cost
+                FROM vet_visits
+                WHERE pet_id = ?
                 ORDER BY visit_date DESC
             """, (pet_id,))
             return [VetVisit(*row) for row in cursor.fetchall()]

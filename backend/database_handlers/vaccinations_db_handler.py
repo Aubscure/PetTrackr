@@ -16,10 +16,10 @@ class VaccinationDB:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO vaccinations (pet_id, vaccine_name, date_administered, next_due)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO vaccinations (pet_id, vaccine_name, date_administered, next_due, price, notes)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (vax.pet_id, vax.vaccine_name, vax.date_administered, vax.next_due)
+                (vax.pet_id, vax.vaccine_name, vax.date_administered, vax.next_due, vax.price, vax.notes)
             )
             conn.commit()
             return cursor.lastrowid
@@ -30,10 +30,10 @@ class VaccinationDB:
             cursor.execute(
                 """
                 UPDATE vaccinations
-                SET pet_id = ?, vaccine_name = ?, date_administered = ?, next_due = ?
+                SET pet_id = ?, vaccine_name = ?, date_administered = ?, next_due = ?, price = ?, notes = ?
                 WHERE id = ?
                 """,
-                (vax.pet_id, vax.vaccine_name, vax.date_administered, vax.next_due)
+                (vax.pet_id, vax.vaccine_name, vax.date_administered, vax.next_due, vax.price, vax.notes)
             )
             conn.commit()
 
@@ -41,9 +41,8 @@ class VaccinationDB:
         """Get all vaccinations for a specific pet ID"""
         with self.connect() as conn:
             cursor = conn.cursor()
-            # Removed the pet existence check since it's causing errors
             cursor.execute("""
-                SELECT pet_id, vaccine_name, date_administered, next_due
+                SELECT pet_id, vaccine_name, date_administered, next_due, price, notes
                 FROM vaccinations
                 WHERE pet_id = ?
                 ORDER BY date_administered DESC

@@ -1,6 +1,6 @@
 # tests/test_pet_controller.py
 import sys, os
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import string
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -67,6 +67,30 @@ class PetTrackrCLI:
         except Exception as e:
             print(f"❌ Error retrieving pets: {e}")
 
+    def _add_vet_visit(self, pet_id):
+        print("\n🩺 Add Vet Visit")
+        data = {
+            "pet_id": pet_id,
+            "visit_date": self._get_valid_input("Visit Date (YYYY-MM-DD): ", self._validate_date),
+            "reason": input("Reason: "),
+            "notes": input("Notes (optional): ")
+        }
+        self.vet_visit_controller.create(data)
+        print("✅ Vet Visit saved.")
+
+    def _add_vaccination(self, pet_id):
+        print("\n💉 Add Vaccination")
+        data = {
+            "pet_id": pet_id,
+            "vaccine_name": input("Vaccine Name: "),
+            "date_administered": self._get_valid_input("Date Administered (YYYY-MM-DD): ", self._validate_date),
+            "next_due": self._get_valid_input("Next Due Date (YYYY-MM-DD): ", self._validate_date),
+            "category": input("Category (e.g., Core, Optional, Rabies): "),
+            "notes": input("Notes (optional): ")
+        }
+        self.vaccination_controller.create(data)
+        print("✅ Vaccination saved.")
+
     def view_pet_profile(self, pet_id):
         try:
             pet, owner = self.controller.get_pet_by_id(pet_id)
@@ -79,32 +103,35 @@ class PetTrackrCLI:
                 if owner: print(f"\n👤 Owner Information:\nName: {owner.name}\nContact: {owner.contact_number}\nAddress: {owner.address}")
                 for label, ctrl, attr, fmt in [
                     ("🩺 Vet Visits", self.vet_visit_controller, "get_by_pet_id", lambda v: f"  - {v.visit_date}: {v.reason}" + (f"\n    Notes: {v.notes}" if v.notes else "")),
-                    ("💉 Vaccinations", self.vaccination_controller, "get_by_pet_id", lambda v: f"  - {v.vaccine_name} (Administered: {v.date_administered}, Next Due: {v.next_due})"),
+                    ("💉 Vaccinations", self.vaccination_controller, "get_by_pet_id", None),
                     ("🍖 Feeding Logs", self.feeding_log_controller, "get_by_pet_id", None),
                 ]:
                     try:
                         items = getattr(ctrl, attr)(pet_id)
                         if items:
                             print(f"\n{label}:")
-                            if label == "🍖 Feeding Logs":
-                                print("  --- Feeding Log Receipt ---")
+                            if label == "💉 Vaccinations":
+                                for v in items:
+                                    print(f"  - {v.vaccine_name} (Administered: {v.date_administered}, Next Due: {v.next_due})")
+                                    if getattr(v, 'category', None):
+                                        print(f"    Category: {v.category}")
+                                    if getattr(v, 'notes', None):
+                                        print(f"    Notes: {v.notes}")
+                            elif label == "🍖 Feeding Logs":
+                                # Display feeding logs with detailed breakdown
+                                base = 350
                                 total = 0
+                                print("  --- Feeding Log Receipt ---")
                                 for v in items:
                                     plan = ", ".join([desc for desc, flag in [("Once", v.feed_once), ("Twice", v.feed_twice), ("Thrice", v.feed_thrice)] if flag]) or "No feeding"
-                                    # Compute fee breakdown
-                                    base = 350
                                     if v.feed_once:
                                         addon = 85
-                                        plan_desc = "Once"
                                     elif v.feed_twice:
                                         addon = 170
-                                        plan_desc = "Twice"
                                     elif v.feed_thrice:
                                         addon = 255
-                                        plan_desc = "Thrice"
                                     else:
                                         addon = 0
-                                        plan_desc = "No feeding"
                                     fee = v.num_days * (base + addon)
                                     total += fee
                                     print(f"  - {v.start_date} | {v.num_days} day(s) | Plan: {plan}")
@@ -125,68 +152,6 @@ class PetTrackrCLI:
         except Exception as e:
             print(f"❌ Error accessing pet profile: {e}")
 
-    def _add_vet_visit(self, pet_id):
-        print("\n🩺 Add Vet Visit")
-        data = {
-            "pet_id": pet_id,
-            "visit_date": self._get_valid_input("Visit Date (YYYY-MM-DD): ", self._validate_date),
-            "reason": input("Reason: "),
-            "notes": input("Notes (optional): ")
-        }
-        self.vet_visit_controller.create(data)
-        print("✅ Vet Visit saved.")
-
-    def _add_vaccination(self, pet_id):
-        print("\n💉 Add Vaccination")
-        data = {
-            "pet_id": pet_id,
-            "vaccine_name": input("Vaccine Name: "),
-            "date_administered": self._get_valid_input("Date Administered (YYYY-MM-DD): ", self._validate_date),
-            "next_due": self._get_valid_input("Next Due Date (YYYY-MM-DD): ", self._validate_date)
-        }
-        self.vaccination_controller.create(data)
-        print("✅ Vaccination saved.")
-
-    def _add_feeding_log(self, pet_id):
-        print("\n🍖 Add Feeding Log (Daycare Enrollment)")
-        start_date = self._get_valid_input("Start Date (YYYY-MM-DD): ", self._validate_date)
-        while True:
-            try:
-                num_days = int(self._get_valid_input("Number of days: ", lambda x: int(x) > 0 or ValueError("Must be positive")))
-                break
-            except ValueError:
-                print("❌ Please enter a valid positive integer for days.")
-        print("Feeding Plan:\n1. Once a day\n2. Twice a day\n3. Thrice a day\n4. No feeding")
-        feed_choice = self._get_valid_input("Choose feeding plan (1/2/3/4): ", lambda x: x in {"1", "2", "3", "4"})
-        feed_once = feed_choice == "1"
-        feed_twice = feed_choice == "2"
-        feed_thrice = feed_choice == "3"
-        # Compute total fee
-        total_fee = compute_total_fee(num_days, feed_once, feed_twice, feed_thrice)
-        print(f"💰 Total Fee: ₱{total_fee}")
-        data = {
-            "pet_id": pet_id,
-            "start_date": start_date,
-            "num_days": num_days,
-            "feed_once": feed_once,
-            "feed_twice": feed_twice,
-            "feed_thrice": feed_thrice
-        }
-        self.feeding_log_controller.create(data)
-        print("✅ Feeding log saved.")
-
-    def _random_string(self, length=6):
-        return ''.join(random.choices(string.ascii_letters, k=length))
-
-    def _random_phone(self):
-        return '09' + ''.join(random.choices(string.digits, k=9))
-
-    def _random_date(self, start_year=2015, end_year=2024):
-        year = random.randint(start_year, end_year)
-        month = random.randint(1, 12)
-        day = random.randint(1, 28)
-        return f"{year:04d}-{month:02d}-{day:02d}"
-
     def add_random_pet(self):
         name = self._random_string()
         breed = random.choice(['Shih Tzu', 'Poodle', 'Bulldog', 'Aspin'])
@@ -201,18 +166,36 @@ class PetTrackrCLI:
             pet_id = self.controller.add_pet_with_owner(pet, owner, image_path)
             print(f"\n✅ Random pet and owner saved! Pet ID: {pet_id}")
             self._add_random_feeding_log(pet_id)
+            self._add_random_vaccination(pet_id)  # Add random vaccination
         except Exception as e:
             print(f"❌ Error saving random pet: {e}")
 
+    def _add_random_vaccination(self, pet_id):
+        vaccine_names = ["Rabies", "Distemper", "Bordetella", "Parvo"]
+        categories = ["Core", "Optional", "Rabies"]
+        vaccine_name = random.choice(vaccine_names)
+        date_administered = self._random_date(2023, 2025)
+        # Use model's default interval for next_due
+        from backend.models.vaccination import Vaccination
+        vax = Vaccination(
+            pet_id=pet_id,
+            vaccine_name=vaccine_name,
+            date_administered=date_administered,
+            category=random.choice(categories),
+            notes=random.choice(["", "No side effects", "Mild fever", "Vet: Dr. Smith"])
+        )
+        data = vax.to_dict()
+        # Remove is_due from dict before saving
+        data.pop("is_due", None)
+        self.vaccination_controller.create(data)
+        print(f"✅ Random vaccination saved: {vaccine_name} ({date_administered})")
+
     def _add_random_feeding_log(self, pet_id):
-        start_date = self._random_date(2024, 2025)
+        start_date = self._random_date(2023, 2025)
         num_days = random.randint(1, 14)
-        feed_plan = random.choice([1, 2, 3, 4])
-        feed_once = feed_plan == 1
-        feed_twice = feed_plan == 2
-        feed_thrice = feed_plan == 3
-        total_fee = compute_total_fee(num_days, feed_once, feed_twice, feed_thrice)
-        print(f"Random Feeding Log: {num_days} days, plan {feed_plan}, fee ₱{total_fee}")
+        feed_once = random.choice([True, False])
+        feed_twice = not feed_once and random.choice([True, False])
+        feed_thrice = not feed_once and not feed_twice
         data = {
             "pet_id": pet_id,
             "start_date": start_date,
@@ -222,7 +205,7 @@ class PetTrackrCLI:
             "feed_thrice": feed_thrice
         }
         self.feeding_log_controller.create(data)
-        print("✅ Random feeding log saved.")
+        print(f"✅ Random feeding log saved: {num_days} day(s) starting {start_date}")
 
     def run(self):
         menu = {
@@ -234,6 +217,19 @@ class PetTrackrCLI:
         while True:
             print("\n=== PetTrackr Main Menu ===\n1. Add Pet\n2. View Pets\n3. Exit\n4. Add Random Pet")
             menu.get(input("\nChoose an option: ").strip(), lambda: print("❌ Invalid choice. Please try again."))()
+
+    def _random_string(self, length=6):
+        return ''.join(random.choices(string.ascii_letters, k=length))
+
+    def _random_date(self, start_year=2015, end_year=2025):
+        start = datetime(start_year, 1, 1)
+        end = datetime(end_year, 12, 31)
+        delta = end - start
+        random_days = random.randint(0, delta.days)
+        return (start + timedelta(days=random_days)).strftime("%Y-%m-%d")
+
+    def _random_phone(self):
+        return "09" + ''.join(random.choices(string.digits, k=9))
 
 if __name__ == "__main__":
     try:

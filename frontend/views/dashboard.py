@@ -1,13 +1,16 @@
 import customtkinter as ctk
 
 from frontend.style.style import (
-    create_button,
     create_label,
     create_frame,
-    get_title_font,
     create_exit_button,
-    create_bento_button
-
+)
+from frontend.components.dashboard_buttons import (
+    add_pet_button,
+    view_pets_button,
+    vaccinations_button,
+    grooming_button,
+    daycare_button,
 )
 
 def create_dashboard(parent, show_frame):
@@ -18,64 +21,54 @@ def create_dashboard(parent, show_frame):
     title = create_label(parent, "🐾 PetTrackr Dashboard")
     title.pack(pady=(20, 10))
 
-    # Main container for bento grid
+    # Main container for bento grid (centered and compact)
     main_frame = create_frame(parent)
-    main_frame.pack(pady=20, padx=20, fill="both", expand=True)
+    main_frame.pack(expand=True)
+    main_frame.configure(width=600, height=400)
+    main_frame.pack_propagate(False)
 
-    # Bento grid container (2x2)
+    # Bento grid container (centered)
     grid_frame = create_frame(main_frame)
-    grid_frame.pack(expand=True)
+    grid_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-    # First row
+    # --- Row 1: Large Add Pet, two stacked small buttons ---
     row1 = create_frame(grid_frame)
-    row1.pack(pady=5)
+    row1.pack()
 
-    add_btn = create_bento_button(
-        row1,
-        text="➕ Add New Pet",
-        command=lambda: show_frame("add_pet"),
-        color="#4CCD99"  # Green
-    )
-    add_btn.pack(side="left", padx=5)
+    add_pet_btn = add_pet_button(row1, show_frame)
+    add_pet_btn.configure(width=320, height=200)
+    add_pet_btn.pack(side="left", padx=(0, 8))
 
-    view_btn = create_bento_button(
-        row1,
-        text="📋 View Pets",
-        command=lambda: show_frame("view_pets"),
-        color="#6C9BCF"  # Blue
-    )
-    view_btn.pack(side="left", padx=5)
+    right_col = create_frame(row1)
+    right_col.pack(side="left")
 
-    # Second row
+    view_pets_btn = view_pets_button(right_col, show_frame)
+    view_pets_btn.configure(width=140, height=95)
+    view_pets_btn.pack(pady=(0, 8))
+
+    vaccinations_btn = vaccinations_button(right_col, show_frame)
+    vaccinations_btn.configure(width=140, height=95)
+    vaccinations_btn.pack(pady=(8, 0))
+
+    # --- Row 2: Groomings, Daycare, Exit (all medium) ---
     row2 = create_frame(grid_frame)
-    row2.pack(pady=5)
+    row2.pack(pady=(8, 0))
 
-    vaccinations_btn = create_bento_button(
-        row2,
-        text="💉 Vaccinations",
-        command=lambda: show_frame("vaccinations"),
-        color="#FFA447"  # Orange
-    )
-    vaccinations_btn.pack(side="left", padx=5)
+    grooming_btn = grooming_button(row2, show_frame)
+    grooming_btn.configure(width=120, height=80)
+    grooming_btn.pack(side="left", padx=(0, 8))
 
-    grooming_btn = create_bento_button(
-        row2,
-        text="✂️ Groomings",
-        command=lambda: show_frame("groomings"),
-        color="#D37676"  # Red
-    )
-    grooming_btn.pack(side="left", padx=5)
-
-    # Exit button (bottom right)
-    exit_frame = create_frame(main_frame)
-    exit_frame.pack(side="bottom", fill="x", pady=20)
+    daycare_btn = daycare_button(row2, show_frame)
+    daycare_btn.configure(width=120, height=80)
+    daycare_btn.pack(side="left", padx=(0, 8))
 
     exit_btn = create_exit_button(
-        exit_frame,
+        row2,
         text="Exit",
         command=parent.quit,
-        width=100
+        width=120,
+        height=80
     )
-    exit_btn.pack(anchor="e")
+    exit_btn.pack(side="left")
 
     return parent

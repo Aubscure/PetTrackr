@@ -89,17 +89,47 @@ def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding
     if vet_visits:
         visits_content = create_card(records_frame, "🩺 Vet Visits", vet_visits)
         for visit in vet_visits:
-            create_label1(visits_content, f"📅 {visit.visit_date}: {visit.reason}", font=get_card_detail_font()).pack(anchor="w", pady=5)
-            if visit.notes: create_label1(visits_content, f"   📝 {visit.notes}", font=get_card_detail_font(), text_color="#666666").pack(anchor="w", padx=10)
+            create_label1(
+                visits_content,
+                f"📅 {visit.visit_date}: {visit.reason}  |  💰 ₱{getattr(visit, 'cost', 0):,.2f}",
+                font=get_card_detail_font()
+            ).pack(anchor="w", pady=5)
+            if visit.notes:
+                create_label1(
+                    visits_content,
+                    f"   📝 {visit.notes}",
+                    font=get_card_detail_font(),
+                    text_color="#666666"
+                ).pack(anchor="w", padx=10)
 
     # Vaccinations
     vac_content = create_card(records_frame, "💉 Vaccinations", vaccinations or [])
     if vaccinations:
         for v in vaccinations:
-            create_label1(vac_content, f"🦠 {getattr(v, 'vaccine_name', 'Unknown vaccine')}", font=get_card_detail_font()).pack(anchor="w", pady=5)
-            create_label1(vac_content, f"   🗓️ Administered: {getattr(v, 'date_administered', 'Unknown date')}", font=get_card_detail_font(), text_color="#666666").pack(anchor="w", padx=10)
-            create_label1(vac_content, f"   🔜 Next Due: {getattr(v, 'next_due', 'Unknown date')}", font=get_card_detail_font(), text_color="#666666").pack(anchor="w", padx=10)
-    else: create_label1(vac_content, "No vaccination records available", font=get_card_detail_font(), text_color="#666666").pack(anchor="w")
+            create_label1(
+                vac_content,
+                f"🦠 {getattr(v, 'vaccine_name', 'Unknown vaccine')}  |  💰 ₱{getattr(v, 'price', 0):,.2f}",
+                font=get_card_detail_font()
+            ).pack(anchor="w", pady=5)
+            create_label1(
+                vac_content,
+                f"   🗓️ Administered: {getattr(v, 'date_administered', 'Unknown date')}",
+                font=get_card_detail_font(),
+                text_color="#666666"
+            ).pack(anchor="w", padx=10)
+            create_label1(
+                vac_content,
+                f"   🔜 Next Due: {getattr(v, 'next_due', 'Unknown date')}",
+                font=get_card_detail_font(),
+                text_color="#666666"
+            ).pack(anchor="w", padx=10)
+    else:
+        create_label1(
+            vac_content,
+            "No vaccination records available",
+            font=get_card_detail_font(),
+            text_color="#666666"
+        ).pack(anchor="w")
 
     # Feeding Logs
     feed_content = create_card(records_frame, "🍖 Feeding Logs", feeding_logs or [])

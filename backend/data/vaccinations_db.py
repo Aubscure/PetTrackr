@@ -19,14 +19,15 @@ class VaccinationsDatabaseInitializer:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS vaccinations (
+                CREATE TABLE IF NOT EXISTS vaccinations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
                     vaccine_name TEXT,
                     date_administered TEXT,
                     next_due TEXT,
+                    price INTEGER,      -- NEW: predetermined price per vaccine
+                    notes TEXT,         -- Optional notes (e.g. side effects, vet remarks)
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
-
                 )
             ''')
 

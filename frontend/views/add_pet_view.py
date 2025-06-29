@@ -19,189 +19,277 @@ from frontend.style.style import (
 )
 from backend.services.daycare_prices import compute_total_fee
 
-def create_add_pet_view(parent, show_frame):
-    # Clear existing widgets
-    for widget in parent.winfo_children():
-        widget.destroy()
+class AddPetView:
+    VACCINE_NAMES = ["Rabies", "Distemper", "Bordetella", "Parvo"]
+    PLAN_OPTIONS = [("Once a day", "1"), ("Twice a day", "2"), ("Thrice a day", "3"), ("No feeding", "4")]
+    VET_VISIT_REASONS = [
+        "Checkup", "Vaccination", "Dental Cleaning", "Injury Treatment", "Surgery",
+        "Skin Problem", "Eye/Ear Issue", "Digestive Issue", "Post-Op Follow-up", "Other"
+    ]
 
-    # Main container setup
-    container = create_frame(parent)
-    container.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.8)
-    container.grid_columnconfigure((0, 1), weight=1)
+    def __init__(self, parent, show_frame):
+        self.parent = parent
+        self.show_frame = show_frame
+        self.records = {"vet_visits": [], "vaccinations": [], "feeding_logs": []}
+        self._build_ui()
 
-    # Header
-    create_label(container, "➕ Add New Pet", font=get_title_font()).grid(row=0, column=0, columnspan=2, pady=(30, 15))
+    def _build_ui(self):
+        for w in self.parent.winfo_children(): w.destroy()
+        container = create_frame(self.parent)
+        container.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.8)
+        container.grid_columnconfigure((0, 1), weight=1)
+        create_label(container, "➕ Add New Pet", font=get_title_font()).grid(row=0, column=0, columnspan=2, pady=(30, 15))
 
-    # Left side - Image uploader
-    left_frame = create_frame(container)
-    left_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
-    image_uploader = ImageUploader(left_frame)
-    image_uploader.pack(pady=(0, 10), fill="both", expand=True)
+        # Left: Image (fixed height, does not expand)
+        left = create_frame(container)
+        left.grid(row=1, column=0, padx=20, pady=10, sticky="n")  # Only sticky to north (top)
+        left.configure(height=380)  # Set a fixed height for the container
+        left.grid_propagate(False)  # Prevent the frame from resizing to its content
 
-    # Right side - Form and buttons
-    right_frame = create_frame(container)
-    right_frame.grid(row=1, column=1, padx=20, pady=10, sticky="nsew")
+        self.image_uploader = ImageUploader(left)
+        self.image_uploader.pack(pady=(0, 10), fill="both", expand=True)  # This is fine, as left is fixed
 
-    # Notebook setup
-    notebook = ctk.CTkTabview(right_frame)
-    notebook.pack(padx=10, pady=10, fill="both", expand=True)
-    pet_tab = notebook.add("Pet Details")
-    owner_tab = notebook.add("Owner Details")
-    medical_tab = notebook.add("Medical Records")
+        # Right: Tabs (expands)
+        right = create_frame(container)
+        right.grid(row=1, column=1, padx=20, pady=10, sticky="nsew")
+        right.grid_rowconfigure(0, weight=1)
+        right.grid_columnconfigure(0, weight=1)
+        notebook = ctk.CTkTabview(right)
+        notebook.pack(padx=10, pady=10, fill="both", expand=True)
+        self._build_pet_tab(notebook.add("Pet Details"))
+        self._build_owner_tab(notebook.add("Owner Details"))
+        self._build_medical_tab(notebook.add("Medical Records"))
 
-    # --- Pet Details ---
-    name_entry = FloatingPlaceholderEntry(pet_tab, "Pet Name")
-    breed_entry = FloatingPlaceholderEntry(pet_tab, "Breed (optional)")
-    for entry in (name_entry, breed_entry):
-        entry.pack(pady=8, fill="x")
+        btn_frame = create_frame(right)
+        btn_frame.pack(pady=(10, 30), fill="x")
+        btn_frame.grid_columnconfigure((0, 1), weight=1, uniform="buttons")
+        create_back_button(btn_frame, text="BACK", command=lambda: self.show_frame("dashboard"), width=100).grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        create_button(btn_frame, text="SAVE", command=self.save_pet, width=100).grid(row=0, column=1, padx=(5, 0), sticky="ew")
 
-    bdate_frame = create_frame(pet_tab)
-    bdate_frame.pack(pady=8, fill="x")
-    create_label(bdate_frame, "Birthdate", font=get_subtitle_font()).pack(anchor="w")
-    bdate_entry = DateEntry(bdate_frame, width=26, date_pattern="yyyy-mm-dd",
-                            background="#3b8ed0", foreground="white", borderwidth=2)
-    bdate_entry.pack(pady=8, ipady=4, fill="x")
+    def _build_pet_tab(self, tab):
+        self.name_entry = FloatingPlaceholderEntry(tab, "Pet Name")
+        self.breed_entry = FloatingPlaceholderEntry(tab, "Breed (optional)")
+        for e in (self.name_entry, self.breed_entry): e.pack(pady=8, fill="x")
+        bdate_frame = create_frame(tab)
+        bdate_frame.pack(pady=8, fill="x")
+        create_label(bdate_frame, "Birthdate", font=get_subtitle_font()).pack(anchor="w")
+        self.bdate_entry = DateEntry(bdate_frame, width=26, date_pattern="yyyy-mm-dd", background="#3b8ed0", foreground="white", borderwidth=2)
+        self.bdate_entry.pack(pady=8, ipady=4, fill="x")
 
-    # --- Owner Details ---
-    owner_name_entry = FloatingPlaceholderEntry(owner_tab, "Owner Name")
-    owner_phone_entry = FloatingPlaceholderEntry(owner_tab, "Contact Number")
-    owner_address_entry = FloatingPlaceholderEntry(owner_tab, "Address")
-    for entry in (owner_name_entry, owner_phone_entry, owner_address_entry):
-        entry.pack(pady=8, fill="x")
+    def _build_owner_tab(self, tab):
+        self.owner_name_entry = FloatingPlaceholderEntry(tab, "Owner Name")
+        self.owner_phone_entry = FloatingPlaceholderEntry(tab, "Contact Number")
+        self.owner_address_entry = FloatingPlaceholderEntry(tab, "Address")
+        for e in (self.owner_name_entry, self.owner_phone_entry, self.owner_address_entry): e.pack(pady=8, fill="x")
 
-    # --- Medical Records ---
-    medical_notebook = ctk.CTkTabview(medical_tab)
-    medical_notebook.pack(fill="both", expand=True, padx=5, pady=5)
+    def _build_medical_tab(self, tab):
+        notebook = ctk.CTkTabview(tab)
+        notebook.pack(fill="both", expand=True, padx=5, pady=5)
+        self.vet_entries = self._vet_visit_section(notebook.add("Vet Visits"))
+        self.vax_entries = self._vaccination_section(notebook.add("Vaccinations"))
+        self.feed_entries, _ = self._feeding_section(notebook.add("Feeding Logs"))
+        self._add_record_buttons(notebook)
 
-    def create_medical_section(tab_name, fields):
-        tab = medical_notebook.add(tab_name)
+    def _vet_visit_section(self, tab):
+        from customtkinter import CTkComboBox
         entries = {}
-        for field in fields:
-            if field["type"] == "date":
-                frame = create_frame(tab)
-                frame.pack(pady=5, fill="x")
-                create_label(frame, field["label"], font=get_subtitle_font()).pack(anchor="w")
-                entry = DateEntry(frame, width=26, date_pattern="yyyy-mm-dd", 
-                                  background="#3b8ed0", foreground="white", borderwidth=2)
-                entry.pack(pady=5, fill="x")
-            elif field["type"] == "textbox":
-                entry = ctk.CTkTextbox(tab, height=80, wrap="word")
-                entry.pack(pady=8, fill="x")
-                entry.insert("0.0", field.get("placeholder", ""))
-                entry.bind("<FocusIn>", lambda e, w=entry, p=field.get("placeholder", ""): 
-                           w.delete("0.0", "end") if w.get("0.0", "end").strip() == p else None)
-            else:
-                entry = FloatingPlaceholderEntry(tab, field["label"])
-                entry.pack(pady=8, fill="x")
-            entries[field["name"]] = entry
+        # Visit Date
+        frame_date = create_frame(tab); frame_date.pack(pady=5, fill="x")
+        create_label(frame_date, "Visit Date", font=get_subtitle_font()).pack(anchor="w")
+        visit_date_entry = DateEntry(frame_date, width=26, date_pattern="yyyy-mm-dd", background="#3b8ed0", foreground="white", borderwidth=2)
+        visit_date_entry.pack(pady=5, fill="x")
+        entries["visit_date"] = visit_date_entry
+
+        # Reason (Dropdown)
+        frame_reason = create_frame(tab); frame_reason.pack(pady=5, fill="x")
+        create_label(frame_reason, "Reason for Visit", font=get_subtitle_font()).pack(anchor="w")
+        reason_cb = CTkComboBox(frame_reason, values=self.VET_VISIT_REASONS, width=220)
+        reason_cb.pack(pady=5, fill="x")
+        reason_cb.set(self.VET_VISIT_REASONS[0])
+        entries["reason"] = reason_cb
+
+        # Notes
+        notes_entry = ctk.CTkTextbox(tab, height=80, wrap="word")
+        notes_entry.pack(pady=8, fill="x")
+        notes_entry.insert("0.0", "Notes (optional)")
+        notes_entry.bind("<FocusIn>", lambda e, w=notes_entry: w.delete("0.0", "end") if w.get("0.0", "end").strip() == "Notes (optional)" else None)
+        entries["notes"] = notes_entry
+
+        # Cost (accepts float or int)
+        frame_cost = create_frame(tab); frame_cost.pack(pady=5, fill="x")
+        create_label(frame_cost, "Cost (₱)", font=get_subtitle_font()).pack(anchor="w")
+        cost_var = ctk.StringVar()
+        cost_entry = ctk.CTkEntry(frame_cost, textvariable=cost_var)
+        cost_entry.pack(pady=5, fill="x")
+        entries["cost"] = cost_entry
+
+        # Validation for cost: only allow float/int
+        def validate_cost(*_):
+            val = cost_var.get()
+            if val == "":
+                cost_entry.configure(border_color="#3b8ed0")
+                return
+            try:
+                float(val)
+                cost_entry.configure(border_color="#3b8ed0")
+            except ValueError:
+                cost_entry.configure(border_color="red")
+        cost_var.trace_add("write", lambda *_: validate_cost())
+
         return entries
 
-    vet_entries = create_medical_section("Vet Visits", [
-        {"name": "visit_date", "label": "Visit Date", "type": "date"},
-        {"name": "reason", "label": "Reason for Visit", "type": "entry"},
-        {"name": "notes", "label": "Notes", "type": "textbox", "placeholder": "Notes (optional)"}
-    ])
-    vax_entries = create_medical_section("Vaccinations", [
-        {"name": "vaccine_name", "label": "Vaccine Name", "type": "entry"},
-        {"name": "date_administered", "label": "Date Administered", "type": "date"},
-        {"name": "next_due", "label": "Next Due Date", "type": "date"}
-    ])
-
-    def create_feeding_log_section(tab):
+    def _vaccination_section(self, tab):
+        from customtkinter import CTkComboBox
         entries = {}
-        scroll_frame = ctk.CTkScrollableFrame(tab, height=340)
-        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        frame1 = create_frame(tab); frame1.pack(pady=5, fill="x")
+        create_label(frame1, "Vaccine Name", font=get_subtitle_font()).pack(anchor="w")
+        vaccine_name_cb = CTkComboBox(frame1, values=self.VACCINE_NAMES, width=220)
+        vaccine_name_cb.pack(pady=5, fill="x")
+        entries["vaccine_name"] = vaccine_name_cb
+        price_var = ctk.StringVar(value="₱0")
+        create_label(frame1, "Price", font=get_subtitle_font()).pack(anchor="w")
+        ctk.CTkLabel(frame1, textvariable=price_var).pack(pady=2, fill="x")
+        entries["price_var"] = price_var
+        def update_price(*_):
+            price = Vaccination.VACCINE_PRICES.get(vaccine_name_cb.get(), 0)
+            price_var.set(f"₱{price}")
+        vaccine_name_cb.configure(command=lambda _: update_price())
+        vaccine_name_cb.set(self.VACCINE_NAMES[0]); update_price()
+        frame2 = create_frame(tab); frame2.pack(pady=5, fill="x")
+        create_label(frame2, "Date Administered", font=get_subtitle_font()).pack(anchor="w")
+        date_admin_entry = DateEntry(frame2, width=26, date_pattern="yyyy-mm-dd", background="#3b8ed0", foreground="white", borderwidth=2)
+        date_admin_entry.pack(pady=5, fill="x")
+        entries["date_administered"] = date_admin_entry
+        frame3 = create_frame(tab); frame3.pack(pady=5, fill="x")
+        create_label(frame3, "Next Due Date (auto)", font=get_subtitle_font()).pack(anchor="w")
+        next_due_var = ctk.StringVar(value="")
+        ctk.CTkLabel(frame3, textvariable=next_due_var, font=get_subtitle_font()).pack(pady=5, fill="x")
+        entries["next_due_var"] = next_due_var
+        notes_entry = ctk.CTkTextbox(tab, height=80, wrap="word")
+        notes_entry.pack(pady=8, fill="x")
+        notes_entry.insert("0.0", "Notes (optional)")
+        entries["notes"] = notes_entry
+        def update_next_due(*_):
+            try:
+                vax = Vaccination(0, vaccine_name_cb.get(), date_admin_entry.get(), "")
+                next_due_var.set(vax.next_due)
+            except: next_due_var.set("")
+        vaccine_name_cb.bind("<<ComboboxSelected>>", lambda e: update_next_due())
+        date_admin_entry.bind("<<DateEntrySelected>>", lambda e: update_next_due())
+        date_admin_entry.bind("<FocusOut>", lambda e: update_next_due())
+        return entries
 
-        # Dates and Days
-        top_frame = create_frame(scroll_frame)
-        top_frame.pack(pady=(0, 16), fill="x")
-        for i, (label, widget) in enumerate([
-            ("Start Date", DateEntry(top_frame, width=18, date_pattern="yyyy-mm-dd", background="#3b8ed0", foreground="white", borderwidth=2)),
-            ("Number of Days", FloatingPlaceholderEntry(top_frame, "e.g. 3"))
-        ]):
-            create_label(top_frame, label, font=get_subtitle_font()).grid(row=i, column=0, sticky="w", padx=(0, 10), pady=(10 if i else 0, 0))
-            widget.grid(row=i, column=1, sticky="ew", pady=(10 if i else 0, 0))
-            entries["start_date" if i == 0 else "num_days"] = widget
-        top_frame.grid_columnconfigure(1, weight=1)
-
-        # Feeding Plan
-        plan_frame = create_frame(scroll_frame)
-        plan_frame.pack(pady=(0, 16), fill="x")
+    def _feeding_section(self, tab):
+        entries = {}
+        scroll = ctk.CTkScrollableFrame(tab, height=340)
+        scroll.pack(fill="both", expand=True, padx=10, pady=10)
+        top = create_frame(scroll); top.pack(pady=(0, 16), fill="x")
+        create_label(top, "Start Date", font=get_subtitle_font()).grid(row=0, column=0, sticky="w", padx=(0, 10), pady=(0, 0))
+        start_date = DateEntry(top, width=18, date_pattern="yyyy-mm-dd", background="#3b8ed0", foreground="white", borderwidth=2)
+        start_date.grid(row=0, column=1, sticky="ew")
+        create_label(top, "Number of Days", font=get_subtitle_font()).grid(row=1, column=0, sticky="w", padx=(0, 10), pady=(10, 0))
+        num_days = FloatingPlaceholderEntry(top, "e.g. 3")
+        num_days.grid(row=1, column=1, sticky="ew", pady=(10, 0))
+        entries["start_date"], entries["num_days"] = start_date, num_days
+        top.grid_columnconfigure(1, weight=1)
+        plan_frame = create_frame(scroll); plan_frame.pack(pady=(0, 16), fill="x")
         create_label(plan_frame, "Feeding Plan", font=get_subtitle_font()).pack(anchor="w", pady=(0, 6))
         plan_var = ctk.StringVar(value="1")
-        plans = [("Once a day", "1"), ("Twice a day", "2"), ("Thrice a day", "3"), ("No feeding", "4")]
-        [ctk.CTkRadioButton(plan_frame, text=t, variable=plan_var, value=v).pack(anchor="w", padx=10, pady=2) for t, v in plans]
+        for t, v in self.PLAN_OPTIONS:
+            ctk.CTkRadioButton(plan_frame, text=t, variable=plan_var, value=v).pack(anchor="w", padx=10, pady=2)
         entries["plan_var"] = plan_var
-
-        # Price Display
-        price_label = create_label(scroll_frame, "Total Fee: ₱0", font=get_subtitle_font())
+        price_label = create_label(scroll, "Total Fee: ₱0", font=get_subtitle_font())
         price_label.pack(pady=(0, 16), anchor="w")
-
         def update_price(*_):
             try:
-                days = int(entries["num_days"].get())
+                days = int(num_days.get())
                 plan = plan_var.get()
                 total = compute_total_fee(days, plan == "1", plan == "2", plan == "3")
                 price_label.configure(text=f"Total Fee: ₱{total}")
-            except Exception:
-                price_label.configure(text="Total Fee: ₱0")
-        entries["num_days"].bind("<KeyRelease>", lambda e: update_price())
+            except: price_label.configure(text="Total Fee: ₱0")
+        num_days.bind("<KeyRelease>", lambda e: update_price())
         plan_var.trace_add("write", lambda *_: update_price())
-
-        # Notes
-        create_label(scroll_frame, "Notes (optional)", font=get_subtitle_font()).pack(anchor="w", pady=(0, 6))
-        notes_entry = ctk.CTkTextbox(scroll_frame, height=60, wrap="word")
+        create_label(scroll, "Notes (optional)", font=get_subtitle_font()).pack(anchor="w", pady=(0, 6))
+        notes_entry = ctk.CTkTextbox(scroll, height=60, wrap="word")
         notes_entry.pack(pady=(0, 10), fill="x")
         entries["notes"] = notes_entry
-
         return entries, price_label
 
-    feed_entries, feed_price_label = create_feeding_log_section(medical_notebook.add("Feeding Logs"))
+    def _add_record_buttons(self, notebook):
+        tab_map = {"vet_visits": self.vet_entries, "vaccinations": self.vax_entries, "feeding_logs": self.feed_entries}
+        tab_names = {"vet_visits": "Vet Visits", "vaccinations": "Vaccinations", "feeding_logs": "Feeding Logs"}
+        required_fields = {
+            "vet_visits": ["visit_date", "reason"],
+            "vaccinations": ["vaccine_name", "date_administered", "next_due"],
+            "feeding_logs": []
+        }
+        success_msgs = {
+            "vet_visits": "Vet visit added successfully!",
+            "vaccinations": "Vaccination added successfully!",
+            "feeding_logs": "Feeding log added successfully!"
+        }
+        for record_type in tab_map:
+            tab = notebook.tab(tab_names[record_type])
+            create_button(tab, text=f"➕ Add {tab_names[record_type][:-1]}", 
+                command=lambda rt=record_type: self.add_record(rt, tab_map[rt], required_fields[rt], success_msgs[rt]), width=120
+            ).pack(pady=10)
 
-    records = {"vet_visits": [], "vaccinations": [], "feeding_logs": []}
-
-    def add_record(record_type, entries, required_fields, success_msg):
+    def add_record(self, record_type, entries, required_fields, success_msg):
         data = {}
         if record_type == "feeding_logs":
             try:
                 data["start_date"] = entries["start_date"].get()
                 data["num_days"] = int(entries["num_days"].get())
                 plan = entries["plan_var"].get()
-                data["feed_once"] = plan == "1"
-                data["feed_twice"] = plan == "2"
-                data["feed_thrice"] = plan == "3"
+                data["feed_once"], data["feed_twice"], data["feed_thrice"] = plan == "1", plan == "2", plan == "3"
                 data["notes"] = entries["notes"].get("0.0", "end").strip()
                 total = compute_total_fee(data["num_days"], data["feed_once"], data["feed_twice"], data["feed_thrice"])
-                plan_desc = (
-                    "Once a day" if data["feed_once"] else
-                    "Twice a day" if data["feed_twice"] else
-                    "Thrice a day" if data["feed_thrice"] else
-                    "No feeding"
-                )
-                base = 350
+                plan_desc = "Once a day" if data["feed_once"] else "Twice a day" if data["feed_twice"] else "Thrice a day" if data["feed_thrice"] else "No feeding"
                 addon = 85 if data["feed_once"] else 170 if data["feed_twice"] else 255 if data["feed_thrice"] else 0
-                breakdown = (
-                    f"Plan: {plan_desc}\n"
-                    f"Breakdown: {data['num_days']} x (₱{base} base + ₱{addon} feeding) = ₱{total}"
-                )
+                breakdown = f"Plan: {plan_desc}\nBreakdown: {data['num_days']} x (₱350 base + ₱{addon} feeding) = ₱{total}"
                 messagebox.showinfo("Feeding Log Added", f"{success_msg}\n\n{breakdown}")
-                records[record_type].append(data)
+                self.records[record_type].append(data)
             except Exception as e:
                 messagebox.showwarning("Invalid Input", f"Please fill all required fields correctly.\n\n{e}")
+        elif record_type == "vet_visits":
+            # Custom handling for vet visits
+            data["visit_date"] = entries["visit_date"].get()
+            data["reason"] = entries["reason"].get()
+            data["notes"] = entries["notes"].get("0.0", "end").strip()
+            cost_val = entries["cost"].get()
+            try:
+                data["cost"] = float(cost_val) if cost_val else 0.0
+            except ValueError:
+                messagebox.showwarning("Invalid Input", "Please enter a valid number for cost.")
                 return
+            if not all(data.get(f) for f in ["visit_date", "reason"]):
+                messagebox.showwarning("Missing Info", "Please fill all required fields.")
+                return
+            self.records[record_type].append(data)
+            messagebox.showinfo("Added", success_msg)
+            # Reset fields
+            for key, entry in entries.items():
+                if key == "notes":
+                    entry.delete("0.0", "end")
+                    entry.insert("0.0", "Notes (optional)")
+                elif key == "visit_date":
+                    entry.set_date(datetime.now())
+                elif key == "reason":
+                    entry.set(self.VET_VISIT_REASONS[0])
+                elif key == "cost":
+                    entry.delete(0, "end")
         else:
             for name, entry in entries.items():
+                if name in ("next_due_var", "price_var"): continue
                 if hasattr(entry, "get"):
-                    if isinstance(entry, ctk.CTkTextbox):
-                        data[name] = entry.get("0.0", "end").strip()
-                    else:
-                        data[name] = entry.get()
-                else:
-                    data[name] = entry.get("0.0", "end").strip()
-            if not all(data[field] for field in required_fields):
-                messagebox.showwarning("Missing Info", f"Please fill all required fields.")
+                    data[name] = entry.get("0.0", "end").strip() if isinstance(entry, ctk.CTkTextbox) else entry.get()
+            if record_type == "vaccinations":
+                data["next_due"] = entries["next_due_var"].get()
+                data["price"] = Vaccination.VACCINE_PRICES.get(entries["vaccine_name"].get(), 0)
+            if not all(data.get(f) for f in required_fields):
+                messagebox.showwarning("Missing Info", "Please fill all required fields.")
                 return
-            records[record_type].append(data)
+            self.records[record_type].append(data)
             messagebox.showinfo("Added", success_msg)
             for entry in entries.values():
                 if isinstance(entry, ctk.CTkTextbox):
@@ -210,13 +298,14 @@ def create_add_pet_view(parent, show_frame):
                 elif isinstance(entry, DateEntry):
                     entry.set_date(datetime.now())
                 else:
-                    entry.delete(0, "end")
+                    try: entry.delete(0, "end")
+                    except: pass
 
-    def save_pet():
+    def save_pet(self):
         required = {
-            "pet": [name_entry.get(), bdate_entry.get()],
-            "owner": [owner_name_entry.get(), owner_phone_entry.get()],
-            "image": [image_uploader.get_image_path()]
+            "pet": [self.name_entry.get(), self.bdate_entry.get()],
+            "owner": [self.owner_name_entry.get(), self.owner_phone_entry.get()],
+            "image": [self.image_uploader.get_image_path()]
         }
         msgs = {
             "pet": "Pet name and birthdate are required.",
@@ -230,8 +319,8 @@ def create_add_pet_view(parent, show_frame):
         try:
             pet_controller = PetController()
             pet_id = pet_controller.add_pet_with_owner(
-                Pet(id=0, name=required["pet"][0], breed=breed_entry.get(), birthdate=required["pet"][1]),
-                Owner(id=0, name=required["owner"][0], contact_number=required["owner"][1], address=owner_address_entry.get()),
+                Pet(0, required["pet"][0], self.breed_entry.get(), required["pet"][1]),
+                Owner(0, required["owner"][0], required["owner"][1], self.owner_address_entry.get()),
                 required["image"][0]
             )
             controllers = {
@@ -239,39 +328,15 @@ def create_add_pet_view(parent, show_frame):
                 "vaccinations": (VaccinationController, Vaccination),
                 "feeding_logs": (FeedingLogController, FeedingLog)
             }
-            for record_type, (controller_cls, model_cls) in controllers.items():
-                ctrl = controller_cls()
-                for record in records[record_type]:
+            for record_type, (ctrl_cls, model_cls) in controllers.items():
+                ctrl = ctrl_cls()
+                for record in self.records[record_type]:
                     model_instance = model_cls(pet_id=pet_id, **record)
                     ctrl.db_handler.insert(model_instance)
             messagebox.showinfo("Saved", f"{required['pet'][0]} and all records added successfully!")
-            records.update({k: [] for k in records})
+            self.records = {k: [] for k in self.records}
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-    tab_map = {"vet_visits": vet_entries, "vaccinations": vax_entries, "feeding_logs": feed_entries}
-    tab_names = {"vet_visits": "Vet Visits", "vaccinations": "Vaccinations", "feeding_logs": "Feeding Logs"}
-    required_fields_map = {
-        "vet_visits": ["visit_date", "reason"],
-        "vaccinations": ["vaccine_name", "date_administered", "next_due"],
-        "feeding_logs": []
-    }
-    success_msgs = {
-        "vet_visits": "Vet visit added successfully!",
-        "vaccinations": "Vaccination added successfully!",
-        "feeding_logs": "Feeding log added successfully!"
-    }
-    vet_visit_tab = medical_notebook.tab("Vet Visits")
-    vaccination_tab = medical_notebook.tab("Vaccinations")
-    feeding_tab = medical_notebook.tab("Feeding Logs")
-    for tab, record_type in zip([vet_visit_tab, vaccination_tab, feeding_tab], ["vet_visits", "vaccinations", "feeding_logs"]):
-        create_button(tab, text=f"➕ Add {tab_names[record_type][:-1]}", command=lambda rt=record_type: add_record(
-            rt, tab_map[rt], required_fields_map[rt], success_msgs[rt]), width=120).pack(pady=10)
-
-    btn_frame = create_frame(right_frame)
-    btn_frame.pack(pady=(10, 30), fill="x")
-    btn_frame.grid_columnconfigure((0, 1), weight=1, uniform="buttons")
-    create_back_button(btn_frame, text="BACK", command=lambda: show_frame("dashboard"), width=100).grid(row=0, column=0, padx=(0, 5), sticky="ew")
-    create_button(btn_frame, text="SAVE", command=save_pet, width=100).grid(row=0, column=1, padx=(5, 0), sticky="ew")
-
-    return parent
+def create_add_pet_view(parent, show_frame):
+    return AddPetView(parent, show_frame).parent

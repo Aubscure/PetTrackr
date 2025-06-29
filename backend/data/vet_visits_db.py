@@ -25,6 +25,7 @@ class VetVisitsDatabaseInitializer:
                     visit_date TEXT,
                     reason TEXT,
                     notes TEXT,
+                    cost REAL,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
                 )
             ''')
