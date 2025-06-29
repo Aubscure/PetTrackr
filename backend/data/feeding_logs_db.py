@@ -19,14 +19,17 @@ class FeedingLogsDatabaseInitializer:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS feeding_logs (
+                CREATE TABLE IF NOT EXISTS daycare_enrollments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    feed_time TEXT,
-                    food_type TEXT,
-                    notes TEXT,
+                    start_date TEXT NOT NULL,
+                    num_days INTEGER NOT NULL,
+                    feed_once BOOLEAN DEFAULT 0,
+                    feed_twice BOOLEAN DEFAULT 0,
+                    feed_thrice BOOLEAN DEFAULT 0,
+                    notes TEXT DEFAULT '',
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
-              )
+                )
             ''')
 
             conn.commit()

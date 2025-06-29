@@ -1,4 +1,4 @@
-# backend/controllers/feeding_log_controller.py
+# File: backend/controllers/feeding_log_controller.py
 from .base_controller import BaseController
 from backend.models.feeding_log import FeedingLog
 from backend.database_handlers.feeding_logs_db_handler import FeedingLogDB
@@ -12,5 +12,5 @@ class FeedingLogController(BaseController):
         try:
             return self.db_handler.get_by_pet_id(pet_id)
         except Exception as e:
-            print(f"Error fetching feeding logs: {e}")
+            print(f"Error fetching daycare enrollments: {e}")
             return []

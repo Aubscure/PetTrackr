@@ -105,6 +105,30 @@ def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding
     feed_content = create_card(records_frame, "🍖 Feeding Logs", feeding_logs or [])
     if feeding_logs:
         for f in feeding_logs:
-            create_label1(feed_content, f"⏰ {getattr(f, 'feed_time', 'Unknown time')}: {getattr(f, 'food_type', 'Unknown food')}", font=get_card_detail_font()).pack(anchor="w", pady=5)
-            if getattr(f, 'notes', None): create_label1(feed_content, f"   📝 {f.notes}", font=get_card_detail_font(), text_color="#666666").pack(anchor="w", padx=10)
-    else: create_label1(feed_content, "No feeding records available", font=get_card_detail_font(), text_color="#666666").pack(anchor="w")
+            # Build a readable feeding plan string
+            plan = []
+            if getattr(f, 'feed_once', False): plan.append("Once a day")
+            if getattr(f, 'feed_twice', False): plan.append("Twice a day")
+            if getattr(f, 'feed_thrice', False): plan.append("Thrice a day")
+            if not plan: plan.append("No feeding")
+            plan_str = ", ".join(plan)
+
+            create_label1(
+                feed_content,
+                f"📅 {getattr(f, 'start_date', 'Unknown date')} — {getattr(f, 'num_days', '?')} day(s), Plan: {plan_str}",
+                font=get_card_detail_font()
+            ).pack(anchor="w", pady=5)
+            if getattr(f, 'notes', None):
+                create_label1(
+                    feed_content,
+                    f"   📝 {f.notes}",
+                    font=get_card_detail_font(),
+                    text_color="#666666"
+                ).pack(anchor="w", padx=10)
+    else:
+        create_label1(
+            feed_content,
+            "No feeding records available",
+            font=get_card_detail_font(),
+            text_color="#666666"
+        ).pack(anchor="w")

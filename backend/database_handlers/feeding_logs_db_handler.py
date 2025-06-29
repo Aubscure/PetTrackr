@@ -14,57 +14,65 @@ class FeedingLogDB:
     def insert(self, log: FeedingLog):
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO feeding_logs (pet_id, feed_time, food_type, notes)
-                VALUES (?, ?, ?, ?)
-                """,
-                (log.pet_id, log.feed_time, log.food_type, log.notes)
-            )
+            cursor.execute("""
+                INSERT INTO daycare_enrollments 
+                (pet_id, start_date, num_days, feed_once, feed_twice, feed_thrice, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                log.pet_id,
+                log.start_date,
+                log.num_days,
+                int(log.feed_once),
+                int(log.feed_twice),
+                int(log.feed_thrice),
+                log.notes
+            ))
             conn.commit()
             return cursor.lastrowid
 
-    def update(self, log: FeedingLog):
+    def update(self, record_id: int, log: FeedingLog):
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                """
-                UPDATE feeding_logs
-                SET pet_id = ?, feed_time = ?, food_type = ?, notes = ?
+            cursor.execute("""
+                UPDATE daycare_enrollments
+                SET pet_id = ?, start_date = ?, num_days = ?, 
+                    feed_once = ?, feed_twice = ?, feed_thrice = ?, notes = ?
                 WHERE id = ?
-                """,
-                (log.pet_id, log.feed_time, log.food_type, log.notes)
-            )
+            """, (
+                log.pet_id,
+                log.start_date,
+                log.num_days,
+                int(log.feed_once),
+                int(log.feed_twice),
+                int(log.feed_thrice),
+                log.notes,
+                record_id
+            ))
             conn.commit()
 
     def get_by_pet_id(self, pet_id: int) -> list[FeedingLog]:
-        """Get all feeding logs for a specific pet ID"""
         with self.connect() as conn:
             cursor = conn.cursor()
-            # Removed the pet existence check since it's causing errors
             cursor.execute("""
-                SELECT pet_id, feed_time, food_type, notes
-                FROM feeding_logs
+                SELECT pet_id, start_date, num_days, feed_once, feed_twice, feed_thrice, notes
+                FROM daycare_enrollments
                 WHERE pet_id = ?
-                ORDER BY feed_time DESC
             """, (pet_id,))
             return [FeedingLog(*row) for row in cursor.fetchall()]
 
     def delete(self, record_id: int):
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM feeding_logs WHERE id = ?", (record_id,))
+            cursor.execute("DELETE FROM daycare_enrollments WHERE id = ?", (record_id,))
             conn.commit()
 
     def fetch_by_id(self, record_id: int):
         with self.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM feeding_logs WHERE id = ?", (record_id,))
+            cursor.execute("""
+                SELECT pet_id, start_date, num_days, feed_once, feed_twice, feed_thrice, notes
+                FROM daycare_enrollments
+                WHERE id = ?
+            """, (record_id,))
             row = cursor.fetchone()
             return FeedingLog(*row) if row else None
-
-    def fetch_all(self, pet_id: int):
-        with self.connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM feeding_logs WHERE pet_id = ? ORDER BY feed_time DESC", (pet_id,))
-            return [FeedingLog(*row) for row in cursor.fetchall()]
