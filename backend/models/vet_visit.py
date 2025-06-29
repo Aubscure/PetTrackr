@@ -5,8 +5,7 @@ class VetVisit:
     Represents a veterinary visit record for a pet.
     """
 
-    def __init__(self, id: int, pet_id: int, visit_date: str, reason: str, notes: str = ""):
-        self.id = id
+    def __init__(self,  pet_id: int, visit_date: str, reason: str, notes: str = ""):
         self.pet_id = pet_id
         self.visit_date = visit_date
         self.reason = reason
@@ -24,7 +23,6 @@ class VetVisit:
 
     def to_dict(self):
         return {
-            "id": self.id,
             "pet_id": self.pet_id,
             "visit_date": self.visit_date,
             "reason": self.reason,

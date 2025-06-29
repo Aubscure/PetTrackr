@@ -22,10 +22,9 @@ class FeedingLogsDatabaseInitializer:
                 CREATE TABLE IF NOT EXISTS feeding_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    pet_id INTEGER,
                     feed_time TEXT,
                     food_type TEXT,
-                    notes TEXT
+                    notes TEXT,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
               )
             ''')

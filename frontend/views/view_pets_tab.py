@@ -4,9 +4,23 @@ from backend.models import owner
 from frontend.components.pet_card import PetCard
 from backend.controllers.pet_controller import PetController
 from frontend.style.style import create_label, create_button, create_frame, get_title_font
+from backend.controllers.vet_visit_controller import VetVisitController
+from backend.controllers.vaccination_controller import VaccinationController
+from backend.controllers.feeding_log_controller import FeedingLogController
 
+def get_vet_visits(pet_id):
+    return VetVisitController().get_by_pet_id(pet_id)
 
+def get_vaccinations(pet_id):
+    return VaccinationController().get_by_pet_id(pet_id)
 
+def get_feeding_logs(pet_id):
+    return FeedingLogController().get_by_pet_id(pet_id)
+
+def show_pet_profile(pet, owner, show_frame):
+    show_frame("pet_profile", pet=pet, owner=owner)
+
+    
 def create_view_pets_tab(parent, show_frame):
     parent_children = parent.winfo_children()
     [widget.destroy() for widget in parent_children]
@@ -59,26 +73,32 @@ def create_view_pets_tab(parent, show_frame):
     controller = PetController()
     pets, owners = controller.get_pets_with_owners()  # Get both pets and owners
     
-    for i, (pet, owner) in enumerate(zip(pets, owners)):  # Use zip to iterate both lists
+    for i, (pet, owner) in enumerate(zip(pets, owners)):
         row = i // 4
         col = i % 4
         card = PetCard(
-            scrollable_frame, 
-            pet, 
+            scrollable_frame,
+            pet,
             thumbnails,
-            owner=owner  # Pass the owner object here
+            owner=owner,
+            on_click=lambda pet, owner: show_frame(
+                "pet_profile",
+                pet=pet,
+                owner=owner,
+                vet_visits=get_vet_visits(pet.id),
+                vaccinations=get_vaccinations(pet.id),
+                feeding_logs=get_feeding_logs(pet.id)
+            )
+
         )
         card.grid(
-            row=row, 
-            column=col, 
-            padx=12, 
-            pady=12, 
+            row=row,
+            column=col,
+            padx=12,
+            pady=12,
             sticky="nsew"
         )
         scrollable_frame.rowconfigure(row, weight=1)
-
-        print(owner.name)  # Before creating PetCard
-    print(owner.contact_number)  # Before creating PetCard
 
     # Back button
     btn_wrapper = create_frame(parent)

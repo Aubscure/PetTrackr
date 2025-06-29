@@ -22,11 +22,10 @@ class GroomingLogsDatabaseInitializer:
                     CREATE TABLE IF NOT EXISTS grooming_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    pet_id INTEGER,
                     groom_date TEXT,
                     service_type TEXT,
                     groomer_name TEXT,
-                    notes TEXT
+                    notes TEXT,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
                 )
             ''')

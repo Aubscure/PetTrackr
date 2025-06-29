@@ -2,9 +2,8 @@ import customtkinter as ctk
 from frontend.views.dashboard import create_dashboard
 from frontend.views.add_pet_view import create_add_pet_view
 from frontend.views.view_pets_tab import create_view_pets_tab
+from frontend.views.pet_profile_tab import create_pet_profile_tab 
 from frontend.style.style import configure_table_style
-
-
 
 def launch_gui():
     """Initializes the main application window and sets up dynamic view navigation."""
@@ -20,19 +19,31 @@ def launch_gui():
     main_frame = ctk.CTkFrame(root, fg_color="transparent")
     main_frame.pack(expand=True, fill="both")
 
-    def show_frame(name: str):
+    def show_frame(name: str, **kwargs):
+        """Show different frames based on the name."""
+
+        # Clear the current frame
+        for widget in main_frame.winfo_children():
+            widget.destroy()
+
         if name == "dashboard":
             create_dashboard(main_frame, show_frame)
         elif name == "add_pet":
             create_add_pet_view(main_frame, show_frame)
         elif name == "view_pets":
             create_view_pets_tab(main_frame, show_frame)
-
-    # (Optional) Apply custom ttk styles
-    # configure_custom_styles()
+        elif name == "pet_profile":
+            create_pet_profile_tab(
+                main_frame,  # 👈 make sure this is 'main_frame', not 'frame'
+                pet=kwargs.get("pet"),
+                owner=kwargs.get("owner"),
+                vet_visits=kwargs.get("vet_visits", []),
+                vaccinations=kwargs.get("vaccinations", []),
+                feeding_logs=kwargs.get("feeding_logs", []),
+                show_frame=show_frame
+            )
 
     configure_table_style()
-
 
     show_frame("dashboard")
     root.mainloop()

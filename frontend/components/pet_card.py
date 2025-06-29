@@ -12,21 +12,30 @@ from frontend.style.style import (
 )
 
 class PetCard(ctk.CTkFrame):
-    def __init__(self, master, pet, image_store, owner=None, *args, **kwargs):
-        super().__init__(
-            master, 
-            fg_color="white", 
-            corner_radius=12,
-            border_width=1,
-            border_color="#e0e0e0",
-            *args, **kwargs
-        )
+
+    def __init__(self, master, pet, image_store, owner=None, on_click=None, *args, **kwargs):
+        super().__init__(master, fg_color="white", corner_radius=12, border_width=1, border_color="#e0e0e0", *args, **kwargs)
+
         self.pet = pet
-        self.owner = owner  # Store owner separately
+        self.owner = owner
         self.image_store = image_store
-        self.configure(width=240)  # Slightly wider for better content
+        self.on_click = on_click
+        self.configure(width=240)
         self.columnconfigure(0, weight=1)
         self._build_card()
+
+
+        self._bind_recursive(self)
+
+    def _bind_recursive(self, widget):
+        widget.bind("<Button-1>", self._handle_click)
+        for child in widget.winfo_children():
+            self._bind_recursive(child)
+
+    def _handle_click(self, event):
+        if self.on_click:
+            self.on_click(self.pet, self.owner)
+
 
     def _build_card(self):
         # Main container with consistent padding
@@ -139,11 +148,7 @@ class PetCard(ctk.CTkFrame):
                 font=get_card_detail_font(),
                 anchor="w"
             ).pack(side="left", padx=5)
-    
-    
 
-    
-    
     def _get_pet_thumbnail(self):
         try:
             img_path = os.path.join("backend", "data", self.pet.image_path)

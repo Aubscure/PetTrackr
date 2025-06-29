@@ -22,10 +22,9 @@ class VaccinationsDatabaseInitializer:
                     CREATE TABLE IF NOT EXISTS vaccinations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    pet_id INTEGER,
                     vaccine_name TEXT,
                     date_administered TEXT,
-                    next_due TEXT
+                    next_due TEXT,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
 
                 )

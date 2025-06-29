@@ -5,9 +5,7 @@ class Vaccination:
     Represents a vaccination record for a pet.
     """
 
-    def __init__(self, id: int, pet_id: int, vaccine_name: str,
-                 date_administered: str, next_due: str):
-        self.id = id
+    def __init__(self, pet_id: int, vaccine_name: str, date_administered: str, next_due: str = ""):
         self.pet_id = pet_id
         self.vaccine_name = vaccine_name
         self.date_administered = date_administered
@@ -16,7 +14,6 @@ class Vaccination:
         Initializes a Vaccination instance.
 
         Args:
-            id (int): The unique vaccination record ID from the database.
             pet_id (int): The ID of the pet this vaccination applies to.
             vaccine_name (str): The name of the vaccine administered.
             date_administered (str): The date the vaccine was administered ('YYYY-MM-DD').
@@ -38,7 +35,6 @@ class Vaccination:
 
     def to_dict(self):
         return {
-            "id": self.id,
             "pet_id": self.pet_id,
             "vaccine_name": self.vaccine_name,
             "date_administered": self.date_administered,

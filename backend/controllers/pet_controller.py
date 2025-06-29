@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import shutil
-import re  # Added this import
+import re
 from typing import List, Tuple, Optional
 from datetime import datetime
 from backend.models.pet import Pet, Owner
@@ -10,6 +10,7 @@ class PetController:
     """Handles all database operations for Pets and Owners following SOLID principles."""
     
     def __init__(self, db_path: str = None):
+        
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.data_dir = os.path.join(self.base_dir, 'data')
         self.images_dir = os.path.join(self.data_dir, 'images')
@@ -107,6 +108,51 @@ class PetController:
         cursor.execute('''
             UPDATE pets SET image_path = ? WHERE id = ?
         ''', (image_path, pet_id))
+
+    def get_pet_by_id(self, pet_id: int) -> Tuple[Optional[Pet], Optional[Owner]]:
+        """
+        Retrieves a single pet by ID with its owner information.
+        
+        Args:
+            pet_id: ID of the pet to retrieve
+            
+        Returns:
+            Tuple of (Pet, Owner) if found, (None, None) otherwise
+        """
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT p.id AS pet_id, p.name AS pet_name, p.breed, p.birthdate, p.image_path,
+                    o.id AS owner_id, o.name AS owner_name, o.contact_number, o.address
+                FROM pets p
+                LEFT JOIN owner o ON p.owner_id = o.id
+                WHERE p.id = ?
+            ''', (pet_id,))
+            
+            row = cursor.fetchone()
+            
+            if not row:
+                return None, None
+                
+            pet = Pet(
+                id=row['pet_id'],
+                name=row['pet_name'],
+                breed=row['breed'],
+                birthdate=row['birthdate'],
+                image_path=row['image_path'],
+                owner_id=row['owner_id']
+            )
+            
+            owner = Owner(
+                id=row['owner_id'],
+                name=row['owner_name'],
+                contact_number=row['contact_number'],
+                address=row['address']
+            ) if row['owner_id'] else None
+            
+            return pet, owner
 
     def get_pets_with_owners(self) -> Tuple[List[Pet], List[Optional[Owner]]]:
         """

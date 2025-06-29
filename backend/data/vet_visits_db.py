@@ -22,10 +22,9 @@ class VetVisitsDatabaseInitializer:
                     CREATE TABLE IF NOT EXISTS vet_visits (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    pet_id INTEGER,
                     visit_date TEXT,
                     reason TEXT,
-                    notes TEXT
+                    notes TEXT,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
                 )
             ''')

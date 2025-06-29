@@ -5,8 +5,7 @@ class FeedingLog:
     Represents a feeding log entry for a pet.
     """
 
-    def __init__(self, id: int, pet_id: int, feed_time: str, food_type: str, notes: str = ""):
-        self.id = id
+    def __init__(self, pet_id: int, feed_time: str, food_type: str, notes: str = ""):
         self.pet_id = pet_id
         self.feed_time = feed_time
         self.food_type = food_type
@@ -24,7 +23,6 @@ class FeedingLog:
 
     def to_dict(self):
         return {
-            "id": self.id,
             "pet_id": self.pet_id,
             "feed_time": self.feed_time,
             "food_type": self.food_type,
