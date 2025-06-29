@@ -16,17 +16,17 @@ def create_view_pets_tab(parent, show_frame):
     [w.destroy() for w in parent.winfo_children()]
     create_label(parent, "📋 All Pets", font=get_title_font()).pack(pady=(20, 15))
 
-    main_frame = create_frame(parent)
-    main_frame.pack(fill="both", expand=True, padx=15, pady=5)
+    main_frame = create_frame(parent, fg_color="#f5f7fa")  # subtle background
+    main_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-    canvas = ctk.CTkCanvas(main_frame, bg="white", highlightthickness=0)
+    canvas = ctk.CTkCanvas(main_frame, bg="#f5f7fa", highlightthickness=0, bd=0)
     scrollbar = ctk.CTkScrollbar(main_frame, command=canvas.yview)
-    scrollable_frame = create_frame(canvas)
+    scrollable_frame = create_frame(canvas, fg_color="#f5f7fa")
     canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
     for i in range(4):
-        scrollable_frame.columnconfigure(i, weight=1, uniform="column", minsize=240)
+        scrollable_frame.columnconfigure(i, weight=1, uniform="column", minsize=260)
 
     def on_canvas_configure(event):
         canvas.itemconfig(canvas_window, width=event.width)
@@ -41,8 +41,8 @@ def create_view_pets_tab(parent, show_frame):
     canvas.bind("<Configure>", on_canvas_configure)
     scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True, padx=(0, 4))
+    scrollbar.pack(side="right", fill="y", padx=(0, 8))
 
     thumbnails = []
     pets, owners = PetController().get_pets_with_owners()
@@ -64,9 +64,11 @@ def create_view_pets_tab(parent, show_frame):
         ).grid(row=row, column=col, padx=12, pady=12, sticky="nsew")
         scrollable_frame.rowconfigure(row, weight=1)
 
-    btn_wrapper = create_frame(parent)
+    from frontend.components.modern_button import CTkModernButton
+
+    btn_wrapper = create_frame(parent, fg_color="transparent")
     btn_wrapper.pack(pady=20)
-    create_button(
+    CTkModernButton(
         btn_wrapper,
         text="⬅️ Back to Dashboard",
         command=lambda: show_frame("dashboard"),

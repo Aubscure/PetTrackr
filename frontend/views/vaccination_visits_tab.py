@@ -37,8 +37,25 @@ class VaccinationVisitsTab:
         main_frame = create_frame(parent)
         main_frame.pack(expand=True, fill="both", padx=20, pady=10)
 
-        cards_frame = create_frame(main_frame)
-        cards_frame.pack(expand=True, fill="both")
+        # Add scrollable frame for cards
+        try:
+            cards_frame = ctk.CTkScrollableFrame(main_frame)
+        except AttributeError:
+            # Fallback for older customtkinter: use canvas+frame+scrollbar
+            import tkinter as tk
+            canvas = tk.Canvas(main_frame)
+            scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+            cards_frame = create_frame(canvas)
+            cards_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+            canvas.create_window((0, 0), window=cards_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+        else:
+            cards_frame.pack(expand=True, fill="both")
         cards_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
         if not pets_with_records:

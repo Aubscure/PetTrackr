@@ -9,6 +9,7 @@ from frontend.style.style import (
     get_card_icon_font
 )
 from backend.controllers.feeding_log_controller import FeedingLogController
+from backend.services.daycare_prices import compute_total_fee
 
 class PetCardWithFeedingLogs(PetCard):
     def __init__(self, master, pet, image_store, owner=None, on_click=None, *args, **kwargs):
@@ -134,14 +135,25 @@ class PetCardWithFeedingLogs(PetCard):
 
         logs_label = create_label(logs_frame, "Feeding Logs:", font=get_subtitle_font())
         logs_label.pack(anchor="w")
+
         if self.feeding_logs:
             for log in self.feeding_logs:
+                total_fee = compute_total_fee(
+                    getattr(log, 'num_days', 0),
+                    getattr(log, 'feed_once', False),
+                    getattr(log, 'feed_twice', False),
+                    getattr(log, 'feed_thrice', False)
+                )
+                # Create a frame for each log to allow label to fill horizontally
+                log_row = create_frame(logs_frame, "white")
+                log_row.pack(fill="x", padx=5, pady=2)
                 create_label(
-                    logs_frame,
-                    f"• {log}",
+                    log_row,
+                    f"• {log} | Total Fee: ₱{total_fee:,}",
                     font=get_card_detail_font(),
-                    anchor="w"
-                ).pack(anchor="w", padx=10)
+                    anchor="w",
+                    wraplength=400  # Adjust this value as needed for your card width
+                ).pack(fill="x", anchor="w")
         else:
             create_label(
                 logs_frame,

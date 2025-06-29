@@ -18,6 +18,7 @@ from frontend.style.style import (
     get_title_font, get_subtitle_font, create_back_button
 )
 from backend.services.daycare_prices import compute_total_fee
+import os  # Add this import at the top if not present
 
 class AddPetView:
     VACCINE_NAMES = ["Rabies", "Distemper", "Bordetella", "Parvo"]
@@ -360,6 +361,17 @@ class AddPetView:
                     except: pass
 
     def save_pet(self):
+        # Clear all images in the temp folder before saving
+        temp_dir = "backend/data/temp"
+        if os.path.exists(temp_dir):
+            for f in os.listdir(temp_dir):
+                file_path = os.path.join(temp_dir, f)
+                if os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+
         required = {
             "pet": [self.name_entry.get(), self.bdate_entry.get()],
             "owner": [self.owner_name_entry.get(), self.owner_phone_entry.get()],

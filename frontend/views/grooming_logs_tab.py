@@ -35,8 +35,23 @@ def create_grooming_logs_tab(master, show_frame):
     content_frame.grid_columnconfigure(0, weight=1)
 
     # Cards frame for pet cards
-    cards_frame = create_frame(content_frame)
-    cards_frame.grid(row=0, column=0, sticky="nsew")
+    try:
+        cards_frame = ctk.CTkScrollableFrame(content_frame)
+    except AttributeError:
+        import tkinter as tk
+        canvas = tk.Canvas(content_frame)
+        scrollbar = tk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        cards_frame = create_frame(canvas)
+        cards_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=cards_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    else:
+        cards_frame.grid(row=0, column=0, sticky="nsew")
     cards_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
     pet_controller = PetController()

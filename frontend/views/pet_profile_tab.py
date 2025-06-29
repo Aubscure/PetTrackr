@@ -5,6 +5,7 @@ from frontend.style.style import (
     create_label1, create_frame, create_button,
     get_title_font, get_subtitle_font, get_card_detail_font
 )
+from backend.services.daycare_prices import compute_total_fee
 
 class PetProfileTab:
     def __init__(self, parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame):
@@ -144,10 +145,18 @@ class PetProfileTab:
             ("Twice a day", getattr(log, 'feed_twice', False)),
             ("Thrice a day", getattr(log, 'feed_thrice', False))
         ] if cond]) or "No specific plan"
+        # Calculate total fee
+        total_fee = compute_total_fee(
+            getattr(log, 'num_days', 0),
+            getattr(log, 'feed_once', False),
+            getattr(log, 'feed_twice', False),
+            getattr(log, 'feed_thrice', False)
+        )
         self._create_record_item(
-            parent, icon="📅",
+            parent,
+            icon="📅",
             main_text=f"{getattr(log, 'start_date', 'Unknown date')} — {getattr(log, 'num_days', '?')} day(s)",
-            secondary_text=f"Plan: {plan}",
+            secondary_text=f"Plan: {plan} | Total Fee: ₱{total_fee:,}",
             notes=getattr(log, 'notes', None)
         )
 

@@ -14,18 +14,33 @@ from frontend.style.style import (
 class PetCard(ctk.CTkFrame):
 
     def __init__(self, master, pet, image_store, owner=None, on_click=None, *args, **kwargs):
-        super().__init__(master, fg_color="white", corner_radius=12, border_width=1, border_color="#e0e0e0", *args, **kwargs)
-
+        super().__init__(
+            master,
+            fg_color="white",
+            corner_radius=16,
+            border_width=2,
+            border_color="#e0e0e0",
+            *args,
+            **kwargs
+        )
         self.pet = pet
         self.owner = owner
         self.image_store = image_store
         self.on_click = on_click
-        self.configure(width=240)
+        self.configure(width=260)
         self.columnconfigure(0, weight=1)
         self._build_card()
 
-
         self._bind_recursive(self)
+        self._add_hover_effects()
+
+    def _add_hover_effects(self):
+        def on_enter(e):
+            self.configure(border_color="#3b8ed0", fg_color="#f7faff")
+        def on_leave(e):
+            self.configure(border_color="#e0e0e0", fg_color="white")
+        self.bind("<Enter>", on_enter)
+        self.bind("<Leave>", on_leave)
 
     def _bind_recursive(self, widget):
         widget.bind("<Button-1>", self._handle_click)
