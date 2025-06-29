@@ -6,6 +6,7 @@ from typing import List, Tuple, Optional
 from datetime import datetime
 from backend.models.pet import Pet, Owner
 
+
 class PetController:
     """Handles all database operations for Pets and Owners following SOLID principles."""
     
@@ -224,3 +225,74 @@ class PetController:
             ''')
             
             return [Owner(**dict(row)) for row in cursor.fetchall()]
+
+    def get_pets_with_vacc_and_vet_records(self):
+        """
+        Returns pets that have at least one vaccination AND at least one vet visit record.
+        """
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DISTINCT p.*
+                FROM pets p
+                INNER JOIN vaccinations vax ON p.id = vax.pet_id
+                INNER JOIN vet_visits vv ON p.id = vv.pet_id
+            """)
+            pets = [self._row_to_pet(row) for row in cursor.fetchall()]
+            return pets
+
+    def _row_to_pet(self, row: sqlite3.Row) -> Pet:
+        """Converts a database row to a Pet object."""
+        return Pet(
+            id=row['id'],
+            name=row['name'],
+            breed=row['breed'],
+            birthdate=row['birthdate'],
+            owner_id=row['owner_id'],
+            image_path=row.get('image_path')  # image_path may not always be present
+        )
+
+    def get_pets_with_vacc_or_vet_records(self):
+        """
+        Returns pets (with owners) that have at least one vaccination OR at least one vet visit record.
+        Works even if vaccinations and vet_visits are in separate DB files.
+        """
+        from backend.controllers.vaccination_controller import VaccinationController
+        from backend.controllers.vet_visit_controller import VetVisitController
+
+        pets, owners = self.get_pets_with_owners()
+        pets_with_records = []
+        owners_with_records = []
+
+        vax_ctrl = VaccinationController()
+        visit_ctrl = VetVisitController()
+
+        for pet, owner in zip(pets, owners):
+            has_vax = vax_ctrl.get_by_pet_id(pet.id)
+            has_visit = visit_ctrl.get_by_pet_id(pet.id)
+            if has_vax or has_visit:
+                pets_with_records.append(pet)
+                owners_with_records.append(owner)
+
+        return pets_with_records, owners_with_records
+
+    def get_pets_with_feeding_logs(self):
+        """
+        Returns pets (with owners) that have at least one feeding log.
+        """
+        from backend.controllers.feeding_log_controller import FeedingLogController
+
+        pets, owners = self.get_pets_with_owners()
+        pets_with_logs = []
+        owners_with_logs = []
+
+        feeding_ctrl = FeedingLogController()
+
+        for pet, owner in zip(pets, owners):
+            logs = feeding_ctrl.get_by_pet_id(pet.id)
+            if logs:
+                pets_with_logs.append(pet)
+                owners_with_logs.append(owner)
+
+        return pets_with_logs, owners_with_logs

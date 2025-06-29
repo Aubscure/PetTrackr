@@ -1,4 +1,7 @@
 from frontend.style.style import create_bento_button
+from backend.controllers.pet_controller import PetController
+from backend.controllers.vaccination_controller import VaccinationController
+from backend.controllers.vet_visit_controller import VetVisitController
 
 def add_pet_button(parent, show_frame):
     return create_bento_button(
@@ -20,7 +23,7 @@ def vaccinations_button(parent, show_frame):
     return create_bento_button(
         parent,
         text="💉 Vaccinations",
-        command=lambda: show_frame("vaccinations"),
+        command=lambda: show_frame("vaccination_visits"),
         color="#FFA447"
     )
 
@@ -36,6 +39,6 @@ def daycare_button(parent, show_frame):
     return create_bento_button(
         parent,
         text="🏠 Daycare",
-        command=lambda: show_frame("daycare"),
+        command=lambda: show_frame("view_feeding_logs"),
         color="#B799FF"
     )

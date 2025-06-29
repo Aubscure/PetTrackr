@@ -68,6 +68,13 @@ class VetVisitDB:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM vet_visits WHERE pet_id = ? ORDER BY visit_date DESC", (pet_id,))
             return [VetVisit(*row) for row in cursor.fetchall()]
+
+    def get_all(self):
+        """Fetch all vet visit records."""
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT pet_id, visit_date, reason, notes, cost FROM vet_visits")
+            return [VetVisit(*row) for row in cursor.fetchall()]
         
 
 vet_visits_db_handler = VetVisitDB()

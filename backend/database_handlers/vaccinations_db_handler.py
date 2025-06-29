@@ -67,3 +67,10 @@ class VaccinationDB:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM vaccinations WHERE pet_id = ? ORDER BY next_due ASC", (pet_id,))
             return [Vaccination(*row) for row in cursor.fetchall()]
+
+    def get_all(self):
+        """Fetch all vaccination records."""
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT pet_id, vaccine_name, date_administered, next_due, price, notes FROM vaccinations")
+            return [Vaccination(*row) for row in cursor.fetchall()]

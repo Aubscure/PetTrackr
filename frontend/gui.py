@@ -3,6 +3,8 @@ from frontend.views.dashboard import create_dashboard
 from frontend.views.add_pet_view import create_add_pet_view
 from frontend.views.view_pets_tab import create_view_pets_tab
 from frontend.views.pet_profile_tab import create_pet_profile_tab 
+from frontend.views.vaccination_visits_tab import VaccinationVisitsTab
+from frontend.views.view_feeding_logs_tab import create_view_feeding_logs_tab
 from frontend.style.style import configure_table_style
 
 def launch_gui():
@@ -34,7 +36,7 @@ def launch_gui():
             create_view_pets_tab(main_frame, show_frame)
         elif name == "pet_profile":
             create_pet_profile_tab(
-                main_frame,  # 👈 make sure this is 'main_frame', not 'frame'
+                main_frame,
                 pet=kwargs.get("pet"),
                 owner=kwargs.get("owner"),
                 vet_visits=kwargs.get("vet_visits", []),
@@ -42,6 +44,13 @@ def launch_gui():
                 feeding_logs=kwargs.get("feeding_logs", []),
                 show_frame=show_frame
             )
+        elif name == "vaccination_visits":
+            VaccinationVisitsTab.create(
+                main_frame,
+                show_frame
+            )
+        elif name == "view_feeding_logs":
+            create_view_feeding_logs_tab(main_frame, show_frame)
 
     configure_table_style()
 
