@@ -31,7 +31,7 @@ def grooming_button(parent, show_frame):
     return create_bento_button(
         parent,
         text="✂️ Groomings",
-        command=lambda: show_frame("groomings"),
+        command=lambda: show_frame("grooming_logs"),  # <-- updated
         color="#D37676"
     )
 

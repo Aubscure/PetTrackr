@@ -5,7 +5,9 @@ from frontend.views.view_pets_tab import create_view_pets_tab
 from frontend.views.pet_profile_tab import create_pet_profile_tab 
 from frontend.views.vaccination_visits_tab import VaccinationVisitsTab
 from frontend.views.view_feeding_logs_tab import create_view_feeding_logs_tab
+from frontend.views.grooming_logs_tab import create_grooming_logs_tab  # <-- add this import
 from frontend.style.style import configure_table_style
+from backend.controllers.grooming_controller import GroomingLogsController
 
 def launch_gui():
     """Initializes the main application window and sets up dynamic view navigation."""
@@ -35,13 +37,16 @@ def launch_gui():
         elif name == "view_pets":
             create_view_pets_tab(main_frame, show_frame)
         elif name == "pet_profile":
+            pet = kwargs.get("pet")
+            grooming_logs = GroomingLogsController().get_grooming_logs_for_pet(pet.id) if pet else []
             create_pet_profile_tab(
                 main_frame,
-                pet=kwargs.get("pet"),
+                pet=pet,
                 owner=kwargs.get("owner"),
                 vet_visits=kwargs.get("vet_visits", []),
                 vaccinations=kwargs.get("vaccinations", []),
                 feeding_logs=kwargs.get("feeding_logs", []),
+                grooming_logs=grooming_logs,  # <-- Pass the logs here
                 show_frame=show_frame
             )
         elif name == "vaccination_visits":
@@ -51,6 +56,8 @@ def launch_gui():
             )
         elif name == "view_feeding_logs":
             create_view_feeding_logs_tab(main_frame, show_frame)
+        elif name == "grooming_logs":  # <-- add this case
+            create_grooming_logs_tab(main_frame, show_frame)
 
     configure_table_style()
 

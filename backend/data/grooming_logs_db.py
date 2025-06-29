@@ -19,17 +19,17 @@ class GroomingLogsDatabaseInitializer:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS grooming_logs (
+                CREATE TABLE IF NOT EXISTS grooming_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     pet_id INTEGER NOT NULL,
-                    groom_date TEXT,
-                    service_type TEXT,
+                    groom_date TEXT DEFAULT (datetime('now')),
+                    groom_type TEXT,
+                    price REAL,
                     groomer_name TEXT,
                     notes TEXT,
                     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
                 )
             ''')
-
             conn.commit()
 
 # Optional standalone run

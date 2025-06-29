@@ -7,13 +7,14 @@ from frontend.style.style import (
 )
 
 class PetProfileTab:
-    def __init__(self, parent, pet, owner, vet_visits, vaccinations, feeding_logs, show_frame):
+    def __init__(self, parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame):
         self.parent = parent
         self.pet = pet
         self.owner = owner
         self.vet_visits = vet_visits
         self.vaccinations = vaccinations
         self.feeding_logs = feeding_logs
+        self.grooming_logs = grooming_logs  # NEW
         self.show_frame = show_frame
         self._build()
 
@@ -92,6 +93,7 @@ class PetProfileTab:
         self._records_section(content, "🩺 Vet Visits", self.vet_visits, self._vet_visit_item, top=20)
         self._records_section(content, "💉 Vaccinations", self.vaccinations, self._vaccine_item, top=20, empty="No vaccination records available")
         self._records_section(content, "🍖 Feeding Logs", self.feeding_logs, self._feeding_item, top=20, empty="No feeding records available")
+        self._records_section(content, "✂️ Grooming Logs", self.grooming_logs, self._grooming_item, top=20, empty="No grooming records available")  # NEW
 
     def _section(self, parent, title, items, top=0):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -149,38 +151,70 @@ class PetProfileTab:
             notes=getattr(log, 'notes', None)
         )
 
-    def _create_record_item(self, parent, icon, main_text, secondary_text=None, notes=None, details=None):
+    def _grooming_item(self, parent, grooming):
+        # grooming: GroomingLog instance
+        groom_type_map = {
+            "basic": "Basic Groom",
+            "premium": "Premium Groom",
+            "custom": "Custom Groom"
+        }
+        groom_type_label = groom_type_map.get(getattr(grooming, "groom_type", ""), grooming.groom_type.capitalize())
+        self._create_record_item(
+            parent,
+            icon="✂️",
+            main_text=f"{getattr(grooming, 'groom_date', 'Unknown date')}: {groom_type_label}",
+            secondary_text=f"💰 ₱{getattr(grooming, 'price', 0):,.2f} by {getattr(grooming, 'groomer_name', 'Unknown')}",
+            notes=getattr(grooming, 'notes', None)
+        )
+
+    def _create_record_item(self, parent, icon, main_text, secondary_text=None, details=None, notes=None):
         item = ctk.CTkFrame(parent, fg_color="transparent")
-        item.pack(fill="x", pady=(0, 8))
+        item.pack(fill="x", pady=(0, 12))
         
-        main_line = ctk.CTkFrame(item, fg_color="transparent")
-        main_line.pack(fill="x")
+        icon_label = ctk.CTkLabel(item, text=icon, font=("Arial", 16), fg_color="transparent")
+        icon_label.pack(side="left", padx=(0, 12))
         
-        create_label1(main_line, icon, font=get_card_detail_font()).pack(side="left", padx=(0, 6))
-        create_label1(main_line, main_text, font=get_card_detail_font()).pack(side="left")
+        text_frame = ctk.CTkFrame(item, fg_color="transparent")
+        text_frame.pack(fill="x", expand=True)
+        
+        main_label = create_label1(text_frame, main_text, font=get_card_detail_font(), text_color="#222")
+        main_label.pack(anchor="w")
         
         if secondary_text:
-            create_label1(main_line, secondary_text, font=get_card_detail_font(), text_color="#666").pack(side="left", padx=(12, 0))
+            secondary_label = create_label1(text_frame, secondary_text, font=get_card_detail_font(), text_color="#666")
+            secondary_label.pack(anchor="w")
         
         if details:
-            [create_label1(item, d, font=get_card_detail_font(), text_color="#666").pack(anchor="w", padx=(20, 0), pady=(2, 0)) for d in details]
+            for detail in details:
+                detail_label = create_label1(text_frame, detail, font=get_card_detail_font(), text_color="#888")
+                detail_label.pack(anchor="w")
         
         if notes:
-            create_label1(item, f"📝 {notes}", font=get_card_detail_font(), text_color="#666").pack(anchor="w", padx=(20, 0), pady=(4, 0))
+            notes_label = create_label1(text_frame, f"📝 Notes: {notes}", font=get_card_detail_font(), text_color="#888")
+            notes_label.pack(anchor="w")
+        
+        separator = ctk.CTkFrame(parent, height=1, fg_color="#e0e0e0")
+        separator.pack(fill="x", pady=(8, 0))
 
-    def _create_empty_state(self, parent, message):
-        create_label1(parent, message, font=get_card_detail_font(), text_color="#999").pack(anchor="w", pady=(4, 0))
+    def _create_empty_state(self, parent, text):
+        empty_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        empty_frame.pack(fill="x", pady=(0, 12))
+        
+        create_label1(empty_frame, text, font=get_card_detail_font(), text_color="#888", justify="center").pack()
 
     def _back_button(self):
-        bottom = ctk.CTkFrame(self.parent, fg_color="transparent")
-        bottom.pack(fill="x", side="bottom", padx=80, pady=(0, 24))
-        bottom.pack_propagate(False)
-        bottom.configure(height=48)
-        create_button(bottom, text="← Back", command=self._go_back, width=120).pack(side="right")
+        btn = create_button(
+            self.parent,
+            text="← Back",
+            command=lambda: self.show_frame("view_pets"),  # <-- Go back to view_pets
+            color="#8c8c8c",
+            width=120
+        )
+        btn.pack(side="bottom", pady=16)
 
-    def _go_back(self):
-        self.show_frame("view_pets")
-
-def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, show_frame):
-    PetProfileTab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, show_frame)
+def create_pet_profile_tab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame):
+    """
+    Factory function to create and display a PetProfileTab.
+    """
+    PetProfileTab(parent, pet, owner, vet_visits, vaccinations, feeding_logs, grooming_logs, show_frame)
     return parent

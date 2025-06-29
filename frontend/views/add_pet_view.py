@@ -26,11 +26,16 @@ class AddPetView:
         "Checkup", "Vaccination", "Dental Cleaning", "Injury Treatment", "Surgery",
         "Skin Problem", "Eye/Ear Issue", "Digestive Issue", "Post-Op Follow-up", "Other"
     ]
+    GROOM_TYPES = [
+        ("Basic Groom (₱1,000)", "basic"),
+        ("Premium Groom (₱1,800)", "premium"),
+        ("Custom Groom (₱1,500)", "custom"),
+    ]
 
     def __init__(self, parent, show_frame):
         self.parent = parent
         self.show_frame = show_frame
-        self.records = {"vet_visits": [], "vaccinations": [], "feeding_logs": []}
+        self.records = {"vet_visits": [], "vaccinations": [], "feeding_logs": [], "groomings": []}
         self._build_ui()
 
     def _build_ui(self):
@@ -88,6 +93,7 @@ class AddPetView:
         self.vet_entries = self._vet_visit_section(notebook.add("Vet Visits"))
         self.vax_entries = self._vaccination_section(notebook.add("Vaccinations"))
         self.feed_entries, _ = self._feeding_section(notebook.add("Feeding Logs"))
+        self.groom_entries = self._grooming_section(notebook.add("Grooming Logs"))  # NEW
         self._add_record_buttons(notebook)
 
     def _vet_visit_section(self, tab):
@@ -215,22 +221,56 @@ class AddPetView:
         entries["notes"] = notes_entry
         return entries, price_label
 
+    def _grooming_section(self, tab):
+        from customtkinter import CTkRadioButton, StringVar
+        entries = {}
+        # Groom Type Radios
+        create_label(tab, "Groom Type", font=get_subtitle_font()).pack(anchor="w", pady=(0, 6))
+        groom_type_var = ctk.StringVar(value="basic")
+        for label, value in self.GROOM_TYPES:
+            ctk.CTkRadioButton(tab, text=label, variable=groom_type_var, value=value).pack(anchor="w", padx=10, pady=2)
+        entries["groom_type"] = groom_type_var
+
+        # Groomer Name
+        entries["groomer_name"] = FloatingPlaceholderEntry(tab, "Groomer Name")
+        entries["groomer_name"].pack(pady=8, fill="x")
+
+        # Notes
+        notes_entry = ctk.CTkTextbox(tab, height=60, wrap="word")
+        notes_entry.pack(pady=8, fill="x")
+        notes_entry.insert("0.0", "Notes (optional)")
+        entries["notes"] = notes_entry
+
+        return entries
+
     def _add_record_buttons(self, notebook):
-        tab_map = {"vet_visits": self.vet_entries, "vaccinations": self.vax_entries, "feeding_logs": self.feed_entries}
-        tab_names = {"vet_visits": "Vet Visits", "vaccinations": "Vaccinations", "feeding_logs": "Feeding Logs"}
+        tab_map = {
+            "vet_visits": self.vet_entries,
+            "vaccinations": self.vax_entries,
+            "feeding_logs": self.feed_entries,
+            "groomings": self.groom_entries,  # NEW
+        }
+        tab_names = {
+            "vet_visits": "Vet Visits",
+            "vaccinations": "Vaccinations",
+            "feeding_logs": "Feeding Logs",
+            "groomings": "Grooming Logs",  # NEW
+        }
         required_fields = {
             "vet_visits": ["visit_date", "reason"],
             "vaccinations": ["vaccine_name", "date_administered", "next_due"],
-            "feeding_logs": []
+            "feeding_logs": [],
+            "groomings": ["groom_type", "groomer_name"],  # NEW
         }
         success_msgs = {
             "vet_visits": "Vet visit added successfully!",
             "vaccinations": "Vaccination added successfully!",
-            "feeding_logs": "Feeding log added successfully!"
+            "feeding_logs": "Feeding log added successfully!",
+            "groomings": "Grooming log added successfully!",  # NEW
         }
         for record_type in tab_map:
             tab = notebook.tab(tab_names[record_type])
-            create_button(tab, text=f"➕ Add {tab_names[record_type][:-1]}", 
+            create_button(tab, text=f"➕ Add {tab_names[record_type][:-1]}",
                 command=lambda rt=record_type: self.add_record(rt, tab_map[rt], required_fields[rt], success_msgs[rt]), width=120
             ).pack(pady=10)
 
@@ -278,6 +318,24 @@ class AddPetView:
                     entry.set(self.VET_VISIT_REASONS[0])
                 elif key == "cost":
                     entry.delete(0, "end")
+        elif record_type == "groomings":
+            data = {}
+            data["groom_type"] = entries["groom_type"].get()
+            data["groomer_name"] = entries["groomer_name"].get()
+            data["notes"] = entries["notes"].get("0.0", "end").strip()
+            # Set price based on type
+            price_map = {"basic": 1000.0, "custom": 1500.0, "premium": 1800.0}
+            data["price"] = price_map.get(data["groom_type"], 0.0)
+            if not all(data.get(f) for f in required_fields):
+                messagebox.showwarning("Missing Info", "Please fill all required fields.")
+                return
+            self.records[record_type].append(data)
+            messagebox.showinfo("Added", success_msg)
+            # Reset fields
+            entries["groom_type"].set("basic")
+            entries["groomer_name"].delete(0, "end")
+            entries["notes"].delete("0.0", "end")
+            entries["notes"].insert("0.0", "Notes (optional)")
         else:
             for name, entry in entries.items():
                 if name in ("next_due_var", "price_var"): continue
@@ -326,13 +384,35 @@ class AddPetView:
             controllers = {
                 "vet_visits": (VetVisitController, VetVisit),
                 "vaccinations": (VaccinationController, Vaccination),
-                "feeding_logs": (FeedingLogController, FeedingLog)
+                "feeding_logs": (FeedingLogController, FeedingLog),
+                "groomings": (None, None),  # NEW
             }
             for record_type, (ctrl_cls, model_cls) in controllers.items():
-                ctrl = ctrl_cls()
-                for record in self.records[record_type]:
-                    model_instance = model_cls(pet_id=pet_id, **record)
-                    ctrl.db_handler.insert(model_instance)
+                if record_type == "groomings":
+                    from backend.controllers.grooming_controller import GroomingLogsController
+                    from backend.models.grooming_log import GroomingLog
+                    ctrl = GroomingLogsController()
+                    for record in self.records[record_type]:
+                        model_instance = GroomingLog(
+                            id=0,
+                            pet_id=pet_id,
+                            groom_date="",  # DB will auto-generate
+                            groom_type=record["groom_type"],
+                            price=record["price"],
+                            groomer_name=record["groomer_name"],
+                            notes=record["notes"]
+                        )
+                        ctrl.add_grooming_log(
+                            pet_id=pet_id,
+                            groom_type=record["groom_type"],
+                            groomer_name=record["groomer_name"],
+                            notes=record["notes"]
+                        )
+                else:
+                    ctrl = ctrl_cls()
+                    for record in self.records[record_type]:
+                        model_instance = model_cls(pet_id=pet_id, **record)
+                        ctrl.db_handler.insert(model_instance)
             messagebox.showinfo("Saved", f"{required['pet'][0]} and all records added successfully!")
             self.records = {k: [] for k in self.records}
         except Exception as e:
